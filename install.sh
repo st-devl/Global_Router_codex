@@ -136,7 +136,7 @@ agent-router-check() {
   echo "Local version: $local_version"
 
   if command -v curl >/dev/null 2>&1; then
-    latest_version="$(curl -fsSL "$version_url" 2>/dev/null | tr -d '[:space:]' || true)"
+    latest_version="$(curl -fsSL "${version_url}?t=$(date +%s)" 2>/dev/null | tr -d '[:space:]' || true)"
     if [ -n "$latest_version" ]; then
       echo "GitHub version: $latest_version"
       if [ "$local_version" = "$latest_version" ]; then
