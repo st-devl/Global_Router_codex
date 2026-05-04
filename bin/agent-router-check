@@ -33,10 +33,10 @@ if command -v curl >/dev/null 2>&1; then
       ok=0
     fi
   else
-    echo "GitHub version: kontrol edilemedi"
+    check_line "Version" "SKIPPED (offline)"
   fi
 else
-  echo "GitHub version: curl yok, atlandi"
+  check_line "Version" "SKIPPED (no curl)"
 fi
 
 if [ -x "$AGENT_ROUTER_HOME/router.py" ]; then

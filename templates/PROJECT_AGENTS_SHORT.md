@@ -6,11 +6,14 @@ Router, görevleri simple/standard/risky/complex olarak etiketleyebilir.
 ## Core Rules
 - İlgili dosyaları tespit etmeden kod değiştirme.
 - Basit işlerde hızlı ilerle; riskli veya çok adımlı işlerde kısa plan ver.
+- Planı kısa tut; mümkünse 5 maddeden fazla yazma.
 - Varsayım yanlış çıkarsa dur ve yeniden değerlendir.
 - Minimum güvenli değişiklik yap; mevcut mimari ve stile uy.
 - Hata düzeltirken semptomu değil kök sebebi çöz.
 - İş bitmeden en uygun test veya kontrolle doğrula.
 - Kullanıcı onayı olmadan migration, destructive command, package upgrade, auth/deployment değişikliği veya büyük refactor yapma.
+- Mümkün olan en az dosyayı değiştir.
+- Gereksiz açıklama yapma; kısa ve net kal.
 
 ## Skill Router
 Global router: `~/.agent-router/router.py`

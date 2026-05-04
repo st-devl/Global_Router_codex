@@ -243,17 +243,8 @@ ve çıktıdaki workflow talimatını buna göre kısaltır.
 
 ## Yeni Çalışma Disiplini
 
-Bu sistem her göreve ağır bir süreç dayatmaz. Basit işler kısa tutulur. Ancak
-görev çok adımlı, riskli veya mimari karar içeriyorsa router ilgili skill'leri
-seçerek Codex'e şu disiplini verir:
-
-- Önce ilgili dosyaları ve kapsamı netleştir.
-- Non-trivial işlerde kısa task list çıkar.
-- Bir varsayım yanlış çıkarsa dur ve yeniden değerlendir.
-- Hata düzeltirken semptomu değil kök sebebi çöz.
-- Fix sonrası regresyon riskini kontrol et.
-- İş bitmeden test, log, build veya davranış kanıtı göster.
-- Çözüm hacky görünüyorsa en basit sürdürülebilir alternatifi düşün.
+Basit işler kısa kalır. Riskli veya çok adımlı işlerde router ilgili skill'leri
+seçer ve kısa plan + doğrulama disiplini uygular.
 
 Bu kurallar özellikle şu skill'lerle gelir:
 
@@ -261,6 +252,13 @@ Bu kurallar özellikle şu skill'lerle gelir:
 - `bug-fix-debugging`: bug report, failing test, log ve root-cause debugging.
 - `test-validation`: test, lint, build ve bitiş öncesi kanıt.
 - `refactor-safety`: sade, davranış koruyan ve minimum etkili refactor.
+
+Kurallar kısa tutulur:
+
+- Plan maksimum birkaç madde.
+- Mümkünse en az dosya ile çöz.
+- Gereksiz açıklama yapma.
+- Durum net değilse tek kritik soru sor.
 
 ## Health Check
 
@@ -272,7 +270,7 @@ Bu kurallar özellikle şu skill'lerle gelir:
 - `verify code and run tests` yanlışlıkla database skill'i seçiyorsa
 - Karmaşık mimari görevleri `workflow-discipline` seçmiyorsa
 
-Network yoksa sadece sürüm karşılaştırması atlanır; diğer kontroller devam eder.
+Network yoksa sürüm karşılaştırması atlanır; diğer kontroller devam eder.
 
 ## Güncelleme
 

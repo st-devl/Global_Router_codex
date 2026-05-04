@@ -38,5 +38,6 @@ Use for bugs, failing tests, runtime errors, broken CI, regressions, or unexpect
 
 ## Guardrails
 - Do not patch only symptoms unless the user explicitly asks for a workaround.
-- Ask one focused question only when critical evidence is missing.
+- Ask at most one focused question, and only when a critical fact blocks progress.
 - Follow logs/tests over assumptions.
+- If the bug is already reproducible from repo evidence, do not ask questions.

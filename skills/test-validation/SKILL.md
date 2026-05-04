@@ -41,7 +41,15 @@ Use when the task requires tests, lint, type checks, build checks, CI, or proof 
 - Prefer targeted checks; run broader checks only when risk or blast radius justifies it.
 - Report exact commands, outcomes, and behavior evidence.
 
+## Verification Matrix
+- Small local edit: targeted test or syntax check.
+- Shared module or API change: targeted test plus one regression check.
+- Bug fix: reproduce, fix, rerun repro, and check the nearby path.
+- UI change: component smoke check plus responsive sanity check.
+- High-risk change: verification only after required approval and with the narrowest useful checks.
+
 ## Guardrails
 - Do not run destructive or environment-changing commands without approval.
 - If checks cannot run, state the blocker and give manual verification steps.
 - Do not call non-trivial work done without relevant evidence.
+- Keep the verification plan short and specific.
