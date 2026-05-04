@@ -234,9 +234,12 @@ Router en fazla 3 skill seçer. Eşleşme yoksa sadece local `AGENTS.md`
 kullanılmasını söyler.
 
 Skorlama; Türkçe/İngilizce normalizasyon, güvenli exact/prefix/phrase eşleşme,
-dinamik ikincil skill eşiği ve açıklama eşleşme limiti kullanır. Kısa trigger'lar
-artık agresif prefix ile eşleşmez; örneğin `verify` kelimesi `veri` trigger'ı
-yüzünden database skill'ini çağırmaz.
+dinamik ikincil skill eşiği, açıklama eşleşme limiti ve hafif repo sinyali
+kullanır. Kısa trigger'lar agresif prefix ile eşleşmez; örneğin `verify`
+kelimesi `veri` trigger'ı yüzünden database skill'ini çağırmaz.
+
+Router ayrıca task'i `simple`, `standard`, `risky` veya `complex` olarak etiketler
+ve çıktıdaki workflow talimatını buna göre kısaltır.
 
 ## Yeni Çalışma Disiplini
 
@@ -258,6 +261,18 @@ Bu kurallar özellikle şu skill'lerle gelir:
 - `bug-fix-debugging`: bug report, failing test, log ve root-cause debugging.
 - `test-validation`: test, lint, build ve bitiş öncesi kanıt.
 - `refactor-safety`: sade, davranış koruyan ve minimum etkili refactor.
+
+## Health Check
+
+`agent-router-check` şu durumlarda kırılmamalı:
+
+- Local kurulum bozuksa
+- Python syntax bozuksa
+- Skill dosyaları yüklenemiyorsa
+- `verify code and run tests` yanlışlıkla database skill'i seçiyorsa
+- Karmaşık mimari görevleri `workflow-discipline` seçmiyorsa
+
+Network yoksa sadece sürüm karşılaştırması atlanır; diğer kontroller devam eder.
 
 ## Güncelleme
 

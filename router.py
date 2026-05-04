@@ -92,6 +92,115 @@ DESCRIPTION_STOP_WORDS = {
     "which",
 }
 
+REPO_SIGNAL_MAP = {
+    "database-safety": [
+        "prisma",
+        "migrations",
+        "migration",
+        "database",
+        "db",
+        "models",
+        "seed",
+        "sql",
+        "schema",
+    ],
+    "auth-security": [
+        "auth",
+        "middleware",
+        "guards",
+        "session",
+        "login",
+        "admin",
+    ],
+    "api-safety": [
+        "api",
+        "routes",
+        "controllers",
+        "server",
+        "actions",
+    ],
+    "ui-ux-change": [
+        "components",
+        "styles",
+        "css",
+        "tailwind",
+        "pages",
+        "app",
+    ],
+    "test-validation": [
+        "tests",
+        "test",
+        "__tests__",
+        ".github",
+        "package.json",
+        "pyproject.toml",
+        "composer.json",
+    ],
+    "deployment-safety": [
+        "Dockerfile",
+        "docker-compose",
+        ".env",
+        ".github",
+        "vercel",
+        "deploy",
+        "config",
+    ],
+    "workflow-discipline": [
+        "AGENTS.md",
+        "docs",
+        "tasks",
+    ],
+    "architecture-review": [
+        "src",
+        "app",
+        "lib",
+        "modules",
+        "services",
+    ],
+    "refactor-safety": [
+        "src",
+        "app",
+        "lib",
+        "components",
+    ],
+}
+
+RISK_KEYWORDS = {
+    "database",
+    "db",
+    "migration",
+    "migrate",
+    "schema",
+    "auth",
+    "login",
+    "permission",
+    "admin",
+    "deploy",
+    "deployment",
+    "production",
+    "prod",
+    "secret",
+    "refactor",
+}
+
+COMPLEXITY_KEYWORDS = {
+    "plan",
+    "planning",
+    "workflow",
+    "orchestration",
+    "complex",
+    "complexity",
+    "architecture",
+    "mimari",
+    "refactor",
+    "redesign",
+    "task list",
+    "gorev listesi",
+    "multi step",
+    "multi-step",
+    "adim adim",
+}
+
 
 def find_project_root(start: Path) -> Path:
     """Find the nearest parent that looks like a project root."""
@@ -211,7 +320,19 @@ def find_project_skills(project_root: Path) -> List[Dict[str, object]]:
     return skills
 
 
-def score_skill(skill: Dict[str, object], prompt: str) -> int:
+def collect_repo_signals(project_root: Path) -> set[str]:
+    signals: set[str] = set()
+
+    for skill_name, hints in REPO_SIGNAL_MAP.items():
+        for hint in hints:
+            if (project_root / hint).exists():
+                signals.add(skill_name)
+                break
+
+    return signals
+
+
+def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -> int:
     prompt_l = normalize_text(prompt)
     prompt_tokens = tokenize(prompt)
     prompt_token_set = set(prompt_tokens)
@@ -277,14 +398,17 @@ def score_skill(skill: Dict[str, object], prompt: str) -> int:
     if skill.get("source") == "project" and score > 0:
         score += 3
 
+    if skill["name"] in repo_signals and score > 0:
+        score += 2
+
     return score
 
 
-def select_skills(skills: List[Dict[str, object]], prompt: str) -> List[Tuple[Dict[str, object], int]]:
+def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: set[str]) -> List[Tuple[Dict[str, object], int]]:
     scored: List[Tuple[Dict[str, object], int]] = []
 
     for skill in skills:
-        score = score_skill(skill, prompt)
+        score = score_skill(skill, prompt, repo_signals)
         if score >= MIN_SKILL_SCORE:
             scored.append((skill, score))
 
@@ -322,7 +446,30 @@ def select_skills(skills: List[Dict[str, object]], prompt: str) -> List[Tuple[Di
     return selected
 
 
-def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str, object], int]]) -> str:
+def classify_task(prompt: str, selected: List[Tuple[Dict[str, object], int]]) -> str:
+    prompt_l = normalize_text(prompt)
+    prompt_tokens = set(tokenize(prompt))
+    selected_names = {skill["name"] for skill, _ in selected}
+
+    if selected and any(skill.get("risk") == "high" for skill, _ in selected):
+        return "risky"
+
+    if any(keyword in prompt_l for keyword in COMPLEXITY_KEYWORDS):
+        return "complex"
+
+    if any(keyword in prompt_tokens for keyword in RISK_KEYWORDS):
+        return "risky"
+
+    if len(selected_names) > 1:
+        return "standard"
+
+    if len(prompt_tokens) <= 5:
+        return "simple"
+
+    return "standard"
+
+
+def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str, object], int]], task_class: str) -> str:
     lines: List[str] = []
 
     lines.append("# Routed Agent Prompt")
@@ -332,6 +479,7 @@ def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str,
     lines.append("")
     lines.append("## Project Context")
     lines.append(f"- Project root: `{project_root}`")
+    lines.append(f"- Task class: `{task_class}`")
     lines.append("- Read the local `AGENTS.md` if it exists.")
     lines.append("- Do not read unrelated skill files.")
     lines.append("- Use only the selected skills below unless the task clearly requires another one.")
@@ -359,14 +507,25 @@ def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str,
         lines.append("- No specific skill matched. Use only the local `AGENTS.md` and make the minimum safe change.")
         lines.append("")
 
+    if task_class == "simple":
+        lines.append("## Workflow Mode")
+        lines.append("- Keep it short. Inspect only what is needed, change the minimum, verify briefly.")
+        lines.append("")
+    elif task_class == "risky":
+        lines.append("## Workflow Mode")
+        lines.append("- Stop before risky edits. Give a short plan and require approval for database, auth, deployment, or destructive changes.")
+        lines.append("")
+    elif task_class == "complex":
+        lines.append("## Workflow Mode")
+        lines.append("- Create a concise task list, verify assumptions, and proceed incrementally.")
+        lines.append("")
+
     lines.append("## Final Working Rules")
     lines.append("- First identify the relevant files.")
     lines.append("- Before risky changes, provide a short plan.")
     lines.append("- If evidence contradicts the plan, stop and reassess before continuing.")
     lines.append("- Make the minimum safe change.")
-    lines.append(
-        "- Do not perform database migrations, destructive actions, package changes, auth changes, or deployment changes without explicit approval."
-    )
+    lines.append("- Do not perform database migrations, destructive actions, package changes, auth changes, or deployment changes without explicit approval.")
     lines.append("- Before finishing, verify the work with the most relevant available check.")
     lines.append("- At the end, summarize changed files, checks/tests, behavior evidence, and remaining risks.")
     lines.append("")
@@ -384,9 +543,11 @@ def main() -> int:
     project_root = find_project_root(Path(os.getcwd()))
     global_skills = load_skills_from_dir(GLOBAL_SKILLS_DIR, "global")
     project_skills = find_project_skills(project_root)
-    selected = select_skills(project_skills + global_skills, prompt)
+    repo_signals = collect_repo_signals(project_root)
+    selected = select_skills(project_skills + global_skills, prompt, repo_signals)
+    task_class = classify_task(prompt, selected)
 
-    print(build_output(prompt, project_root, selected))
+    print(build_output(prompt, project_root, selected, task_class))
     return 0
 
 

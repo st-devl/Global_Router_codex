@@ -118,6 +118,7 @@ assert_route "database" "Veritabanina yeni alan ekle" "database-safety"
 assert_route "bug" "Bug var test failed loglara bak" "bug-fix-debugging"
 assert_route "verify" "verify code and run tests" "test-validation"
 assert_not_route "verify-no-db" "verify code and run tests" "database-safety"
+assert_route "complex" "Karmaşık mimari değişiklik için görev listesi hazırla" "workflow-discipline"
 
 if [ "$ok" -eq 1 ]; then
   echo "Agent Router saglik durumu: OK"

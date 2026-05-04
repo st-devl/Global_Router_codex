@@ -1,6 +1,7 @@
 # AGENTS.md - Project Instructions
 
 Bu proje global Agent Router ile çalışır. Uzun kurallar yerine görevle ilgili skill'ler router tarafından seçilir.
+Router, görevleri simple/standard/risky/complex olarak etiketleyebilir.
 
 ## Core Rules
 - İlgili dosyaları tespit etmeden kod değiştirme.
