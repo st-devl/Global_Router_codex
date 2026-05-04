@@ -16,6 +16,8 @@ Bu sayede prompt daha kısa, daha odaklı ve daha güvenli olur.
 - Token tüketimini azaltır.
 - Database, auth, deployment, refactor gibi riskli işlerde Codex'i daha dikkatli
   çalışmaya zorlar.
+- Bug fix, doğrulama ve çok adımlı işlerde kök sebep, plan ve kanıt disiplinini
+  güçlendirir.
 - Her projeye router kopyalamadan global çalışır.
 - İstersen projeye özel skill dosyalarını da destekler.
 
@@ -200,9 +202,32 @@ Global olarak gelen skill'ler:
 - `test-validation`
 - `refactor-safety`
 - `deployment-safety`
+- `workflow-discipline`
+- `bug-fix-debugging`
 
 Router en fazla 3 skill seçer. Eşleşme yoksa sadece local `AGENTS.md`
 kullanılmasını söyler.
+
+## Yeni Çalışma Disiplini
+
+Bu sistem her göreve ağır bir süreç dayatmaz. Basit işler kısa tutulur. Ancak
+görev çok adımlı, riskli veya mimari karar içeriyorsa router ilgili skill'leri
+seçerek Codex'e şu disiplini verir:
+
+- Önce ilgili dosyaları ve kapsamı netleştir.
+- Non-trivial işlerde kısa task list çıkar.
+- Bir varsayım yanlış çıkarsa dur ve yeniden değerlendir.
+- Hata düzeltirken semptomu değil kök sebebi çöz.
+- Fix sonrası regresyon riskini kontrol et.
+- İş bitmeden test, log, build veya davranış kanıtı göster.
+- Çözüm hacky görünüyorsa en basit sürdürülebilir alternatifi düşün.
+
+Bu kurallar özellikle şu skill'lerle gelir:
+
+- `workflow-discipline`: plan, kapsam, reassessment ve kontrollü ilerleme.
+- `bug-fix-debugging`: bug report, failing test, log ve root-cause debugging.
+- `test-validation`: test, lint, build ve bitiş öncesi kanıt.
+- `refactor-safety`: sade, davranış koruyan ve minimum etkili refactor.
 
 ## Güncelleme
 
@@ -247,10 +272,13 @@ Router çıktısına her zaman şu çalışma kuralları eklenir:
 
 - Önce ilgili dosyaları tespit et.
 - Riskli değişikliklerden önce kısa plan ver.
+- Varsayım yanlış çıkarsa dur ve yeniden değerlendir.
 - Minimum güvenli değişiklik yap.
 - Kullanıcı onayı olmadan database migration, destructive action, paket
   değişikliği, auth değişikliği veya deployment değişikliği yapma.
-- İş sonunda değişen dosyaları, testleri ve kalan riskleri özetle.
+- İş bitmeden en uygun test veya kontrolle çalıştığını kanıtla.
+- İş sonunda değişen dosyaları, testleri, davranış kanıtını ve kalan riskleri
+  özetle.
 
 ## Sorun Giderme
 

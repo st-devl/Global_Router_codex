@@ -9,6 +9,9 @@ Bu proje üzerinde çalışırken önce mevcut mimariyi ve dosya yapısını anl
 - Minimum güvenli değişiklik yap.
 - Mevcut mimari ve kod stiline uy.
 - Gereksiz paket ekleme.
+- Bir şey ters giderse veya varsayım yanlış çıkarsa durup planı yeniden değerlendir.
+- Hata düzeltirken semptomu değil kök sebebi çöz.
+- İş bitmeden en uygun test veya kontrolle çalıştığını kanıtla.
 - Kullanıcı onayı olmadan database migration, destructive command, auth değişikliği, deployment değişikliği veya büyük refactor yapma.
 
 ## Skill Router
@@ -28,5 +31,5 @@ Her iş sonunda kısa rapor ver:
 - Yapılanlar
 - Değişen dosyalar
 - Test / kontrol
+- Davranış kanıtı
 - Risk veya manuel kontrol gerekiyorsa belirt
-

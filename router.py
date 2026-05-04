@@ -31,6 +31,7 @@ PROJECT_MARKERS = [
 ]
 
 MAX_SKILLS = 3
+MIN_SKILL_SCORE = 2
 
 TOKEN_RE = re.compile(r"[a-zA-ZığüşöçİĞÜŞÖÇ0-9_/-]+")
 WORD_RE = re.compile(r"[a-zA-ZığüşöçİĞÜŞÖÇ0-9_/-]{5,}")
@@ -210,7 +211,7 @@ def select_skills(skills: List[Dict[str, object]], prompt: str) -> List[Tuple[Di
 
     for skill in skills:
         score = score_skill(skill, prompt)
-        if score > 0:
+        if score >= MIN_SKILL_SCORE:
             scored.append((skill, score))
 
     scored.sort(
@@ -278,11 +279,13 @@ def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str,
     lines.append("## Final Working Rules")
     lines.append("- First identify the relevant files.")
     lines.append("- Before risky changes, provide a short plan.")
+    lines.append("- If evidence contradicts the plan, stop and reassess before continuing.")
     lines.append("- Make the minimum safe change.")
     lines.append(
         "- Do not perform database migrations, destructive actions, package changes, auth changes, or deployment changes without explicit approval."
     )
-    lines.append("- At the end, summarize changed files, checks/tests, and remaining risks.")
+    lines.append("- Before finishing, verify the work with the most relevant available check.")
+    lines.append("- At the end, summarize changed files, checks/tests, behavior evidence, and remaining risks.")
     lines.append("")
 
     return "\n".join(lines)
@@ -306,4 +309,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

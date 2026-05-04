@@ -14,6 +14,9 @@ triggers:
   - cleanup
   - clean up
   - sadeleştir
+  - elegant
+  - kalite
+  - iyileştir
   - tekrar
   - duplication
 paths:
@@ -34,6 +37,7 @@ Use this skill when the task involves refactoring, renaming, moving files, split
 - Are imports/routes/tests affected?
 - Is the refactor behavior-preserving?
 - Could it affect public API or user flows?
+- Is there a simpler way to get the same outcome without restructuring?
 
 ## Rules
 - Do not perform broad refactors unless explicitly requested.
@@ -42,9 +46,12 @@ Use this skill when the task involves refactoring, renaming, moving files, split
 - Update imports carefully.
 - Do not rename routes, files, exports, or public APIs without a plan.
 - Prefer small incremental refactors.
+- If the approach feels hacky, reassess and choose the simplest maintainable solution.
+- Do not chase elegance at the cost of unnecessary abstraction.
 
 ## Output Before Editing
 1. Refactor scope
 2. Files to change
 3. Behavior preservation plan
-4. Risk areas
+4. Simpler alternative considered
+5. Risk areas
