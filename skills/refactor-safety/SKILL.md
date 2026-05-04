@@ -1,0 +1,50 @@
+---
+name: refactor-safety
+description: Use for refactoring, renaming, restructuring, moving files, extracting components, improving architecture, or reducing duplication.
+triggers:
+  - refactor
+  - yeniden düzenle
+  - düzenle
+  - restructure
+  - rename
+  - taşı
+  - move
+  - split
+  - extract
+  - cleanup
+  - clean up
+  - sadeleştir
+  - tekrar
+  - duplication
+paths:
+  - src/
+  - app/
+  - lib/
+  - components/
+risk: high
+---
+
+# Refactor Safety Skill
+
+Use this skill when the task involves refactoring, renaming, moving files, splitting modules, extracting components, or changing structure.
+
+## Check First
+- What is the exact goal of the refactor?
+- Which files are truly affected?
+- Are imports/routes/tests affected?
+- Is the refactor behavior-preserving?
+- Could it affect public API or user flows?
+
+## Rules
+- Do not perform broad refactors unless explicitly requested.
+- Keep behavior unchanged unless asked.
+- Avoid unrelated formatting changes.
+- Update imports carefully.
+- Do not rename routes, files, exports, or public APIs without a plan.
+- Prefer small incremental refactors.
+
+## Output Before Editing
+1. Refactor scope
+2. Files to change
+3. Behavior preservation plan
+4. Risk areas
