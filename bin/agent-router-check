@@ -2,7 +2,7 @@
 set -euo pipefail
 
 AGENT_ROUTER_HOME="${AGENT_ROUTER_HOME:-$HOME/.agent-router}"
-VERSION_URL="${AGENT_ROUTER_VERSION_URL:-https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/VERSION}"
+VERSION_URL="${AGENT_ROUTER_VERSION_URL:-https://raw.githubusercontent.com/st-devl/Global_Router_codex/HEAD/VERSION}"
 MIN_SKILLS="${AGENT_ROUTER_MIN_SKILLS:-10}"
 ok=1
 

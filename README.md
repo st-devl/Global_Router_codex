@@ -314,7 +314,7 @@ Bu komut şunları kontrol eder:
 - Global skill dosyaları yüklenebiliyor mu?
 - Auth, database ve bug promptları doğru skill'leri seçiyor mu?
 - `verify code and run tests` promptu yanlışlıkla database skill'i seçiyor mu?
-- Lokal sürüm GitHub'daki son sürümle aynı mı?
+- Lokal sürüm GitHub'daki son `HEAD` sürümüyle aynı mı?
 
 Her şey doğruysa en sonda şunu görürsün:
 
