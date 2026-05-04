@@ -57,6 +57,11 @@ install_files() {
   install -d "$INSTALL_DIR/templates"
 
   install -m 0755 "$source_dir/router.py" "$INSTALL_DIR/router.py"
+  if [ -f "$source_dir/VERSION" ]; then
+    install -m 0644 "$source_dir/VERSION" "$INSTALL_DIR/VERSION"
+  else
+    printf 'unknown\n' > "$INSTALL_DIR/VERSION"
+  fi
   install -m 0644 "$source_dir/templates/PROJECT_AGENTS_SHORT.md" "$INSTALL_DIR/templates/PROJECT_AGENTS_SHORT.md"
 
   local skill_dir
@@ -116,6 +121,115 @@ agent-router-init() {
 
   echo ".agent/skills/ hazir."
 }
+
+agent-router-check() {
+  local ok=1
+  local local_version="unknown"
+  local latest_version="unknown"
+  local version_url="https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/VERSION"
+
+  echo "Agent Router kontrolu basliyor..."
+
+  if [ -f "$AGENT_ROUTER_HOME/VERSION" ]; then
+    local_version="$(tr -d '[:space:]' < "$AGENT_ROUTER_HOME/VERSION")"
+  fi
+  echo "Local version: $local_version"
+
+  if command -v curl >/dev/null 2>&1; then
+    latest_version="$(curl -fsSL "$version_url" 2>/dev/null | tr -d '[:space:]' || true)"
+    if [ -n "$latest_version" ]; then
+      echo "GitHub version: $latest_version"
+      if [ "$local_version" = "$latest_version" ]; then
+        echo "Version: OK"
+      else
+        echo "Version: UPDATE NEEDED"
+        echo "Guncellemek icin:"
+        echo "curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash"
+        ok=0
+      fi
+    else
+      echo "GitHub version: kontrol edilemedi"
+    fi
+  else
+    echo "GitHub version: curl yok, atlandi"
+  fi
+
+  if [ -x "$AGENT_ROUTER_HOME/router.py" ]; then
+    echo "router.py: OK"
+  else
+    echo "router.py: FAIL"
+    ok=0
+  fi
+
+  python3 - "$AGENT_ROUTER_HOME" <<'PY'
+import ast
+import runpy
+import sys
+from pathlib import Path
+
+home = Path(sys.argv[1])
+router = home / "router.py"
+skills_dir = home / "skills"
+
+try:
+    ast.parse(router.read_text(encoding="utf-8"))
+except Exception as exc:
+    print(f"python syntax: FAIL ({exc})")
+    raise SystemExit(1)
+print("python syntax: OK")
+
+try:
+    ns = runpy.run_path(str(router), run_name="agent_router_check")
+    skills = ns["load_skills_from_dir"](skills_dir, "global")
+except Exception as exc:
+    print(f"skill loading: FAIL ({exc})")
+    raise SystemExit(1)
+
+print(f"skill count: {len(skills)}")
+if len(skills) < 10:
+    print("skill loading: FAIL")
+    raise SystemExit(1)
+print("skill loading: OK")
+PY
+  if [ "$?" -ne 0 ]; then
+    ok=0
+  fi
+
+  local auth_output
+  auth_output="$(python3 "$AGENT_ROUTER_HOME/router.py" "Admin login yetkisini duzelt" 2>/dev/null || true)"
+  if printf '%s\n' "$auth_output" | grep -q 'auth-security'; then
+    echo "route auth: OK"
+  else
+    echo "route auth: FAIL"
+    ok=0
+  fi
+
+  local db_output
+  db_output="$(python3 "$AGENT_ROUTER_HOME/router.py" "Veritabanina yeni alan ekle" 2>/dev/null || true)"
+  if printf '%s\n' "$db_output" | grep -q 'database-safety'; then
+    echo "route database: OK"
+  else
+    echo "route database: FAIL"
+    ok=0
+  fi
+
+  local bug_output
+  bug_output="$(python3 "$AGENT_ROUTER_HOME/router.py" "Bug var test failed loglara bak" 2>/dev/null || true)"
+  if printf '%s\n' "$bug_output" | grep -q 'bug-fix-debugging'; then
+    echo "route bug: OK"
+  else
+    echo "route bug: FAIL"
+    ok=0
+  fi
+
+  if [ "$ok" -eq 1 ]; then
+    echo "Agent Router saglik durumu: OK"
+    return 0
+  fi
+
+  echo "Agent Router saglik durumu: FAIL"
+  return 1
+}
 # <<< Agent Router <<<
 EOF
 )"
@@ -161,4 +275,3 @@ main() {
 }
 
 main "$@"
-

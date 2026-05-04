@@ -114,6 +114,12 @@ Bulunduğun projeye kısa `AGENTS.md` ve `.agent/skills/` klasörü ekler:
 agent-router-init
 ```
 
+Kurulumun çalışır ve güncel olduğunu kontrol eder:
+
+```bash
+agent-router-check
+```
+
 ## Yeni Bir Projede Kullanım
 
 Yeni veya mevcut bir projeye gir:
@@ -265,6 +271,36 @@ source ~/.zshrc
 
 Kurulum script'i `.zshrc` içindeki Agent Router bloğunu tekrar tekrar çoğaltmaz;
 varsa günceller.
+
+## Sağlık Kontrolü
+
+Zaman zaman sistemin çalışır ve güncel olduğunu kontrol etmek için:
+
+```bash
+agent-router-check
+```
+
+Bu komut şunları kontrol eder:
+
+- Lokal `~/.agent-router/` kurulumu var mı?
+- `router.py` çalıştırılabilir mi?
+- Python syntax doğru mu?
+- Global skill dosyaları yüklenebiliyor mu?
+- Auth, database ve bug promptları doğru skill'leri seçiyor mu?
+- Lokal sürüm GitHub'daki son sürümle aynı mı?
+
+Her şey doğruysa en sonda şunu görürsün:
+
+```text
+Agent Router saglik durumu: OK
+```
+
+Eğer `Version: UPDATE NEEDED` görürsen güncelle:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
+source ~/.zshrc
+```
 
 ## Güvenlik Kuralları
 
