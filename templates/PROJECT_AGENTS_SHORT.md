@@ -1,35 +1,24 @@
 # AGENTS.md - Project Instructions
 
-Bu proje üzerinde çalışırken önce mevcut mimariyi ve dosya yapısını anlamadan büyük değişiklik yapma.
+Bu proje global Agent Router ile çalışır. Uzun kurallar yerine görevle ilgili skill'ler router tarafından seçilir.
 
-## Ana Kurallar
-- Gereksiz dosya okuma.
+## Core Rules
 - İlgili dosyaları tespit etmeden kod değiştirme.
-- Büyük veya riskli değişikliklerden önce kısa plan ver.
-- Minimum güvenli değişiklik yap.
-- Mevcut mimari ve kod stiline uy.
-- Gereksiz paket ekleme.
-- Bir şey ters giderse veya varsayım yanlış çıkarsa durup planı yeniden değerlendir.
+- Basit işlerde hızlı ilerle; riskli veya çok adımlı işlerde kısa plan ver.
+- Varsayım yanlış çıkarsa dur ve yeniden değerlendir.
+- Minimum güvenli değişiklik yap; mevcut mimari ve stile uy.
 - Hata düzeltirken semptomu değil kök sebebi çöz.
-- İş bitmeden en uygun test veya kontrolle çalıştığını kanıtla.
-- Kullanıcı onayı olmadan database migration, destructive command, auth değişikliği, deployment değişikliği veya büyük refactor yapma.
+- İş bitmeden en uygun test veya kontrolle doğrula.
+- Kullanıcı onayı olmadan migration, destructive command, package upgrade, auth/deployment değişikliği veya büyük refactor yapma.
 
 ## Skill Router
-Bu projede detaylı kurallar global agent skill sistemiyle yönetilir.
+Global router: `~/.agent-router/router.py`
+Proje özel skill klasörü: `.agent/skills/`
 
-Prompta göre sadece ilgili skill'ler kullanılmalıdır. Gereksiz skill dosyaları okunmamalıdır.
+Prompta göre sadece seçilen skill'leri kullan. Gereksiz skill dosyalarını okuma.
 
-Global router:
-`~/.agent-router/router.py`
-
-Proje özel skill klasörü:
-`.agent/skills/`
-
-## Görev Sonu Raporu
-Her iş sonunda kısa rapor ver:
-
+## Final Report
 - Yapılanlar
 - Değişen dosyalar
-- Test / kontrol
-- Davranış kanıtı
-- Risk veya manuel kontrol gerekiyorsa belirt
+- Test/kontrol ve davranış kanıtı
+- Kalan risk veya manuel kontrol

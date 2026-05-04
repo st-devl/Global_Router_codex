@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+AGENT_ROUTER_HOME="${AGENT_ROUTER_HOME:-$HOME/.agent-router}"
+target="${1:-.}"
+
+mkdir -p "$target/.agent/skills"
+
+if [ -f "$target/AGENTS.md" ]; then
+  echo "AGENTS.md zaten var, uzerine yazilmadi."
+else
+  cp "$AGENT_ROUTER_HOME/templates/PROJECT_AGENTS_SHORT.md" "$target/AGENTS.md"
+  echo "AGENTS.md olusturuldu."
+fi
+
+echo ".agent/skills/ hazir."

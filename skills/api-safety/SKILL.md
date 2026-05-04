@@ -1,6 +1,6 @@
 ---
 name: api-safety
-description: Use for API endpoints, route handlers, controllers, server actions, request validation, response shapes, and client-server data flow.
+description: API endpoints, route handlers, controllers, server actions, request validation, response shapes, and client-server data flow.
 triggers:
   - api
   - endpoint
@@ -28,27 +28,14 @@ risk: high
 
 # API Safety Skill
 
-Use this skill when the task affects API endpoints, route handlers, controllers, server actions, request validation, or response formats.
+Use when a task affects endpoints, route handlers, controllers, server actions, validation, or response contracts.
 
-## Check First
-- Is the endpoint public or protected?
-- What auth/permission guard is used?
-- What input does it accept?
-- What response does the frontend expect?
-- Does the endpoint read or write data?
-- Is validation present?
-- Are sensitive fields returned?
+## Focus
+- Identify endpoint/action, auth guard, accepted input, write/read scope, and frontend response expectations.
+- Check validation, ownership/tenant decisions, error messages, and sensitive fields.
 
-## Rules
-- Preserve existing response contracts unless explicitly changing them.
-- Do not remove server-side validation.
-- Do not expose sensitive data.
+## Guardrails
+- Preserve response contracts unless the user explicitly changes them.
+- Keep server-side validation and permission checks.
 - Do not trust client input for ownership, tenant, or permission decisions.
-- Keep error messages useful but safe.
-- Avoid broad data returns when a smaller response is enough.
-
-## Output Before Editing
-1. Affected endpoint/action
-2. Auth and validation impact
-3. Frontend response compatibility
-4. Minimal safe plan
+- Return only the data the caller needs.

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+AGENT_ROUTER_HOME="${AGENT_ROUTER_HOME:-$HOME/.agent-router}"
+
+if ! command -v codex >/dev/null 2>&1; then
+  echo "codex komutu bulunamadi. Routed prompt asagida:" >&2
+  python3 "$AGENT_ROUTER_HOME/router.py" "$@"
+  exit 127
+fi
+
+codex "$(python3 "$AGENT_ROUTER_HOME/router.py" "$@")"

@@ -1,6 +1,6 @@
 ---
 name: deployment-safety
-description: Use for deployment, environment variables, Docker, CI/CD, hosting config, build settings, production issues, secrets, and release changes.
+description: Deployment, environment variables, Docker, CI/CD, hosting config, build settings, production issues, secrets, and release changes.
 triggers:
   - deploy
   - deployment
@@ -30,25 +30,14 @@ risk: high
 
 # Deployment Safety Skill
 
-Use this skill when the task affects deployment, environment variables, hosting config, Docker, CI/CD, build settings, secrets, or production behavior.
+Use when the task affects deployment, env vars, Docker, CI/CD, hosting, build config, secrets, or production behavior.
 
-## Check First
-- Which environment is affected: local, staging, production?
-- Are secrets or environment variables involved?
-- Does this affect build or runtime?
-- Is hosting configuration changed?
-- Could deployment break existing users?
+## Focus
+- Identify affected environment: local, staging, production, build, or runtime.
+- Check secret handling, hosting config, CI/CD impact, and rollback risk.
 
-## Rules
-- Do not expose secrets.
-- Do not commit `.env` secrets.
-- Do not change production config without explicit approval.
-- Do not change CI/CD pipelines casually.
-- Preserve existing build behavior.
-- Explain deployment risks before editing.
-
-## Output Before Editing
-1. Affected deployment/config files
-2. Environment impact
-3. Secret/security risk
-4. Minimal safe plan
+## Guardrails
+- Do not expose or commit secrets.
+- Do not change production config or CI/CD pipelines casually.
+- Preserve existing build/runtime behavior unless explicitly changing it.
+- Explain deployment risk before editing risky config.

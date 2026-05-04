@@ -41,6 +41,10 @@ Sistem bilgisayara global olarak kurulur:
 
 ```text
 ~/.agent-router/
+  bin/
+  router.py
+  skills/
+  templates/
 ```
 
 Projelerin içine router kodu kopyalanmaz. Projeye sadece istersen kısa bir
@@ -88,6 +92,10 @@ Kurulumdan sonra terminal ayarlarını yenile:
 source ~/.zshrc
 ```
 
+Kurulum `.zshrc` içine uzun fonksiyonlar gömmez. Sadece `~/.agent-router/bin`
+klasörünü `PATH` içine alan kısa ve idempotent bir blok ekler. Komutların gerçek
+kodları ayrı executable dosyalardır.
+
 ## Komutlar
 
 Routed prompt'u terminalde gösterir:
@@ -118,6 +126,17 @@ Kurulumun çalışır ve güncel olduğunu kontrol eder:
 
 ```bash
 agent-router-check
+```
+
+Komut dosyaları şurada kurulur:
+
+```text
+~/.agent-router/bin/
+  agent-route
+  agent-copy
+  agent-codex
+  agent-router-init
+  agent-router-check
 ```
 
 ## Yeni Bir Projede Kullanım
@@ -214,6 +233,11 @@ Global olarak gelen skill'ler:
 Router en fazla 3 skill seçer. Eşleşme yoksa sadece local `AGENTS.md`
 kullanılmasını söyler.
 
+Skorlama; Türkçe/İngilizce normalizasyon, güvenli exact/prefix/phrase eşleşme,
+dinamik ikincil skill eşiği ve açıklama eşleşme limiti kullanır. Kısa trigger'lar
+artık agresif prefix ile eşleşmez; örneğin `verify` kelimesi `veri` trigger'ı
+yüzünden database skill'ini çağırmaz.
+
 ## Yeni Çalışma Disiplini
 
 Bu sistem her göreve ağır bir süreç dayatmaz. Basit işler kısa tutulur. Ancak
@@ -247,9 +271,11 @@ Değişiklikleri yap, test et:
 
 ```bash
 bash -n install.sh
+for f in bin/*; do bash -n "$f"; done
 python3 router.py "Admin login yetkisini düzelt"
 ./install.sh
 source ~/.zshrc
+agent-router-check
 ```
 
 GitHub'a gönder:
@@ -287,6 +313,7 @@ Bu komut şunları kontrol eder:
 - Python syntax doğru mu?
 - Global skill dosyaları yüklenebiliyor mu?
 - Auth, database ve bug promptları doğru skill'leri seçiyor mu?
+- `verify code and run tests` promptu yanlışlıkla database skill'i seçiyor mu?
 - Lokal sürüm GitHub'daki son sürümle aynı mı?
 
 Her şey doğruysa en sonda şunu görürsün:

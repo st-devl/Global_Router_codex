@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -31,10 +32,65 @@ PROJECT_MARKERS = [
 ]
 
 MAX_SKILLS = 3
-MIN_SKILL_SCORE = 2
+MIN_SKILL_SCORE = 4
+SECONDARY_SKILL_RATIO = 0.30
+PREFIX_TRIGGER_MIN_LEN = 5
+DESCRIPTION_MATCH_LIMIT = 2
 
 TOKEN_RE = re.compile(r"[a-zA-ZığüşöçİĞÜŞÖÇ0-9_/-]+")
 WORD_RE = re.compile(r"[a-zA-ZığüşöçİĞÜŞÖÇ0-9_/-]{5,}")
+
+TURKISH_ASCII_MAP = str.maketrans(
+    {
+        "ı": "i",
+        "İ": "i",
+        "ş": "s",
+        "Ş": "s",
+        "ğ": "g",
+        "Ğ": "g",
+        "ü": "u",
+        "Ü": "u",
+        "ö": "o",
+        "Ö": "o",
+        "ç": "c",
+        "Ç": "c",
+    }
+)
+
+RISKY_WORDS = [
+    "delete",
+    "remove",
+    "drop",
+    "migration",
+    "database",
+    "auth",
+    "security",
+    "deploy",
+    "production",
+    "sil",
+    "kaldir",
+    "veritabani",
+    "yetki",
+    "guvenlik",
+    "token",
+    "sifre",
+    "admin",
+]
+
+DESCRIPTION_STOP_WORDS = {
+    "agent",
+    "before",
+    "change",
+    "changes",
+    "checks",
+    "files",
+    "global",
+    "project",
+    "safety",
+    "skill",
+    "tasks",
+    "which",
+}
 
 
 def find_project_root(start: Path) -> Path:
@@ -99,6 +155,20 @@ def as_list(value: object) -> List[str]:
     return []
 
 
+def normalize_text(text: object) -> str:
+    normalized = str(text).translate(TURKISH_ASCII_MAP).casefold()
+    decomposed = unicodedata.normalize("NFKD", normalized)
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
+def tokenize(text: object) -> List[str]:
+    return TOKEN_RE.findall(normalize_text(text))
+
+
+def matches_prefix(trigger: str, token: str) -> bool:
+    return len(trigger) >= PREFIX_TRIGGER_MIN_LEN and token.startswith(trigger)
+
+
 def load_skills_from_dir(base_dir: Path, source: str) -> List[Dict[str, object]]:
     skills: List[Dict[str, object]] = []
 
@@ -142,62 +212,66 @@ def find_project_skills(project_root: Path) -> List[Dict[str, object]]:
 
 
 def score_skill(skill: Dict[str, object], prompt: str) -> int:
-    prompt_l = prompt.lower()
-    prompt_tokens = TOKEN_RE.findall(prompt_l)
+    prompt_l = normalize_text(prompt)
+    prompt_tokens = tokenize(prompt)
+    prompt_token_set = set(prompt_tokens)
     score = 0
+    matched_trigger = False
 
     for trigger in skill.get("triggers", []):
-        trigger_l = str(trigger).lower()
+        trigger_l = normalize_text(trigger)
         if not trigger_l:
             continue
 
-        if " " in trigger_l or "/" in trigger_l:
+        if " " in trigger_l:
             if trigger_l in prompt_l:
-                score += 4
+                score += 7
+                matched_trigger = True
+            continue
+
+        if "/" in trigger_l or "." in trigger_l:
+            if trigger_l in prompt_l:
+                score += 5
+                matched_trigger = True
             continue
 
         for token in prompt_tokens:
-            if token == trigger_l or (len(trigger_l) >= 4 and token.startswith(trigger_l)):
+            if token == trigger_l:
+                score += 6
+                matched_trigger = True
+                break
+            if matches_prefix(trigger_l, token):
                 score += 4
+                matched_trigger = True
                 break
 
     for path_hint in skill.get("paths", []):
-        path_l = str(path_hint).lower()
+        path_l = normalize_text(path_hint)
         if path_l and path_l in prompt_l:
             score += 5
 
-    name = str(skill.get("name", "")).lower().replace("-", " ")
-    for part in name.split():
-        if len(part) >= 4 and part in prompt_l:
+    name_parts = tokenize(str(skill.get("name", "")).replace("-", " "))
+    for part in name_parts:
+        if len(part) >= 4 and (part in prompt_token_set or any(matches_prefix(part, token) for token in prompt_tokens)):
+            score += 2
+
+    description_matches = 0
+    for word in WORD_RE.findall(normalize_text(skill.get("description", ""))):
+        if word in DESCRIPTION_STOP_WORDS:
+            continue
+        if word in prompt_token_set:
             score += 1
+            description_matches += 1
+            if description_matches >= DESCRIPTION_MATCH_LIMIT:
+                break
 
-    description = str(skill.get("description", "")).lower()
-    for word in WORD_RE.findall(description):
-        if word in prompt_l:
-            score += 1
+    risk = normalize_text(skill.get("risk", ""))
+    has_risky_word = any(
+        word in prompt_token_set or any(matches_prefix(word, token) for token in prompt_tokens)
+        for word in RISKY_WORDS
+    )
 
-    risk = str(skill.get("risk", "")).lower()
-    risky_words = [
-        "delete",
-        "remove",
-        "drop",
-        "migration",
-        "database",
-        "auth",
-        "security",
-        "deploy",
-        "production",
-        "sil",
-        "kaldır",
-        "veritabanı",
-        "yetki",
-        "güvenlik",
-        "token",
-        "şifre",
-        "admin",
-    ]
-
-    if score > 0 and risk == "high" and any(word in prompt_l for word in risky_words):
+    if matched_trigger and risk == "high" and has_risky_word:
         score += 2
 
     if skill.get("source") == "project" and score > 0:
@@ -223,10 +297,19 @@ def select_skills(skills: List[Dict[str, object]], prompt: str) -> List[Tuple[Di
         reverse=True,
     )
 
+    if not scored:
+        return []
+
+    top_score = scored[0][1]
+    cutoff = max(MIN_SKILL_SCORE, int(top_score * SECONDARY_SKILL_RATIO))
+
     selected: List[Tuple[Dict[str, object], int]] = []
     seen_names = set()
 
     for skill, score in scored:
+        if score < cutoff:
+            continue
+
         name = skill["name"]
         if name in seen_names:
             continue

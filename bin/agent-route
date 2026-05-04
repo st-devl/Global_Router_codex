@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+AGENT_ROUTER_HOME="${AGENT_ROUTER_HOME:-$HOME/.agent-router}"
+exec python3 "$AGENT_ROUTER_HOME/router.py" "$@"
