@@ -29,12 +29,13 @@ risk: medium
 Use for multi-step, risky, unclear, or architecture-sensitive work.
 
 ## Focus
-- Classify scope: simple, standard, risky, or complex.
+- Follow the router's task class: simple, standard, risky, or complex.
 - For non-trivial work, create a concise task list and verification plan before editing.
 - If evidence contradicts the plan, stop and reassess.
 - Keep simple tasks short; use a fuller workflow only when the scope justifies it.
 
 ## Guardrails
 - Do not create `tasks/todo.md`, lessons, or project management files unless the user asks.
+- Track progress in the conversation by default, not project files.
 - Keep plans short; simple changes should not become ceremonies.
 - Prefer the smallest correct implementation.

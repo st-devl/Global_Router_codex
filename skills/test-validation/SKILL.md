@@ -42,11 +42,11 @@ Use when the task requires tests, lint, type checks, build checks, CI, or proof 
 - Report exact commands, outcomes, and behavior evidence.
 
 ## Verification Matrix
-- Small local edit: targeted test or syntax check.
-- Shared module or API change: targeted test plus one regression check.
-- Bug fix: reproduce, fix, rerun repro, and check the nearby path.
-- UI change: component smoke check plus responsive sanity check.
-- High-risk change: verification only after required approval and with the narrowest useful checks.
+- Simple task: syntax check, targeted unit test, or direct smoke check.
+- Standard task: targeted check; add nearby regression check when shared behavior is touched.
+- Risky task: get required approval first, then run the narrowest relevant check plus behavior evidence.
+- Complex task: verify incrementally after meaningful steps; stop if the same check fails twice.
+- Bug fix: reproduce or isolate, fix, rerun repro, and check the nearby path.
 
 ## Guardrails
 - Do not run destructive or environment-changing commands without approval.

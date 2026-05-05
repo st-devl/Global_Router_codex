@@ -230,35 +230,24 @@ Global olarak gelen skill'ler:
 - `workflow-discipline`
 - `bug-fix-debugging`
 
-Router en fazla 3 skill seçer. Eşleşme yoksa sadece local `AGENTS.md`
-kullanılmasını söyler.
+Router varsayılan olarak en fazla 2 skill seçer. Sadece bug+verification veya
+çoklu bağımsız risk sinyali varsa 3. skill'e çıkar. Eşleşme yoksa local
+`AGENTS.md` ile minimum güvenli değişiklik yapılmasını söyler.
 
-Skorlama; Türkçe/İngilizce normalizasyon, güvenli exact/prefix/phrase eşleşme,
-dinamik ikincil skill eşiği, açıklama eşleşme limiti ve hafif repo sinyali
-kullanır. Kısa trigger'lar agresif prefix ile eşleşmez; örneğin `verify`
-kelimesi `veri` trigger'ı yüzünden database skill'ini çağırmaz.
+Skorlama; Türkçe/İngilizce normalizasyon, exact/phrase/güvenli prefix eşleşme,
+dinamik ikincil skill eşiği ve gerçek repo sinyali kullanır. `paths` alanı prompt
+metni içinde aranmaz; yalnızca repo içinde ilgili dosya/klasör gerçekten varsa
+destek sinyali olarak kullanılır.
 
-Router ayrıca task'i `simple`, `standard`, `risky` veya `complex` olarak etiketler
-ve çıktıdaki workflow talimatını buna göre kısaltır.
+Router task'i `simple`, `standard`, `risky` veya `complex` olarak etiketler.
+Workflow ve doğrulama kuralları bu task class üzerinden seçilir.
 
-## Yeni Çalışma Disiplini
+## Çalışma Disiplini
 
-Basit işler kısa kalır. Riskli veya çok adımlı işlerde router ilgili skill'leri
-seçer ve kısa plan + doğrulama disiplini uygular.
-
-Bu kurallar özellikle şu skill'lerle gelir:
-
-- `workflow-discipline`: plan, kapsam, reassessment ve kontrollü ilerleme.
-- `bug-fix-debugging`: bug report, failing test, log ve root-cause debugging.
-- `test-validation`: test, lint, build ve bitiş öncesi kanıt.
-- `refactor-safety`: sade, davranış koruyan ve minimum etkili refactor.
-
-Kurallar kısa tutulur:
-
-- Plan maksimum birkaç madde.
-- Mümkünse en az dosya ile çöz.
-- Gereksiz açıklama yapma.
-- Durum net değilse tek kritik soru sor.
+Basit işler kısa kalır. Riskli veya çok adımlı işlerde router kısa plan,
+approval ve doğrulama kurallarını task class üzerinden ekler. `workflow-discipline`,
+`bug-fix-debugging`, `test-validation` ve `refactor-safety` yalnızca ilgili
+görevlerde seçilir.
 
 ## Health Check
 
@@ -270,7 +259,12 @@ Kurallar kısa tutulur:
 - `verify code and run tests` yanlışlıkla database skill'i seçiyorsa
 - Karmaşık mimari görevleri `workflow-discipline` seçmiyorsa
 
-Network yoksa sürüm karşılaştırması atlanır; diğer kontroller devam eder.
+Network yoksa sürüm karşılaştırması atlanır; diğer kontroller devam eder. Bunu
+bilerek yapmak için offline mod kullan:
+
+```bash
+AGENT_ROUTER_OFFLINE=1 agent-router-check
+```
 
 ## Güncelleme
 
@@ -319,15 +313,11 @@ Zaman zaman sistemin çalışır ve güncel olduğunu kontrol etmek için:
 agent-router-check
 ```
 
-Bu komut şunları kontrol eder:
+Bu komut kısa PASS/FAIL raporu verir:
 
-- Lokal `~/.agent-router/` kurulumu var mı?
-- `router.py` çalıştırılabilir mi?
-- Python syntax doğru mu?
-- Global skill dosyaları yüklenebiliyor mu?
-- Auth, database ve bug promptları doğru skill'leri seçiyor mu?
-- `verify code and run tests` promptu yanlışlıkla database skill'i seçiyor mu?
-- Lokal sürüm GitHub'daki son `HEAD` sürümüyle aynı mı?
+- Version
+- Installation
+- Route smoke tests
 
 Her şey doğruysa en sonda şunu görürsün:
 

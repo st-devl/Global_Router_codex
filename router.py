@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import json
 import re
 import sys
 import unicodedata
@@ -11,7 +12,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
-GLOBAL_SKILLS_DIR = Path.home() / ".agent-router" / "skills"
+AGENT_ROUTER_HOME = Path(os.environ.get("AGENT_ROUTER_HOME", Path.home() / ".agent-router"))
+GLOBAL_SKILLS_DIR = AGENT_ROUTER_HOME / "skills"
 
 PROJECT_SKILL_DIR_NAMES = [
     ".agent/skills",
@@ -31,14 +33,13 @@ PROJECT_MARKERS = [
     "build.gradle",
 ]
 
-MAX_SKILLS = 3
+DEFAULT_MAX_SKILLS = 2
+EXTENDED_MAX_SKILLS = 3
 MIN_SKILL_SCORE = 4
-SECONDARY_SKILL_RATIO = 0.30
-PREFIX_TRIGGER_MIN_LEN = 5
-DESCRIPTION_MATCH_LIMIT = 2
+SECONDARY_SKILL_RATIO = 0.35
+PREFIX_TRIGGER_MIN_LEN = 7
 
 TOKEN_RE = re.compile(r"[a-zA-ZığüşöçİĞÜŞÖÇ0-9_/-]+")
-WORD_RE = re.compile(r"[a-zA-ZığüşöçİĞÜŞÖÇ0-9_/-]{5,}")
 
 TURKISH_ASCII_MAP = str.maketrans(
     {
@@ -57,148 +58,147 @@ TURKISH_ASCII_MAP = str.maketrans(
     }
 )
 
-RISKY_WORDS = [
-    "delete",
-    "remove",
-    "drop",
-    "migration",
-    "database",
-    "auth",
-    "security",
-    "deploy",
-    "production",
-    "sil",
-    "kaldir",
-    "veritabani",
-    "yetki",
-    "guvenlik",
-    "token",
-    "sifre",
-    "admin",
-]
-
-DESCRIPTION_STOP_WORDS = {
-    "agent",
-    "before",
-    "change",
-    "changes",
-    "checks",
-    "files",
-    "global",
-    "project",
-    "safety",
-    "skill",
-    "tasks",
-    "which",
-}
-
-REPO_SIGNAL_MAP = {
+REPO_SIGNAL_RULES = {
     "database-safety": [
-        "prisma",
-        "migrations",
-        "migration",
-        "database",
-        "db",
-        "models",
-        "seed",
-        "sql",
-        "schema",
+        "prisma/schema.prisma",
+        "prisma/migrations",
+        "db/migrations",
+        "database/migrations",
+        "supabase/migrations",
+        "drizzle.config.ts",
+        "drizzle.config.js",
+        "knexfile.js",
+        "alembic",
     ],
     "auth-security": [
-        "auth",
-        "middleware",
+        "auth.ts",
+        "auth.js",
+        "auth.config.ts",
+        "middleware.ts",
+        "middleware.js",
+        "app/api/auth",
+        "pages/api/auth",
+        "src/auth",
         "guards",
-        "session",
-        "login",
-        "admin",
     ],
     "api-safety": [
-        "api",
-        "routes",
+        "app/api",
+        "pages/api",
+        "routes/api.php",
+        "server/routes",
+        "src/routes",
         "controllers",
-        "server",
-        "actions",
     ],
     "ui-ux-change": [
         "components",
         "styles",
-        "css",
+        "src/components",
+        "app/components",
         "tailwind",
-        "pages",
-        "app",
+        "tailwind.config.js",
+        "tailwind.config.ts",
+        "postcss.config.js",
     ],
     "test-validation": [
         "tests",
-        "test",
         "__tests__",
-        ".github",
-        "package.json",
-        "pyproject.toml",
-        "composer.json",
+        "test",
+        "spec",
+        "jest.config.js",
+        "jest.config.ts",
+        "vitest.config.js",
+        "vitest.config.ts",
+        "pytest.ini",
     ],
     "deployment-safety": [
         "Dockerfile",
-        "docker-compose",
+        "docker-compose.yml",
+        "docker-compose.yaml",
         ".env",
-        ".github",
+        ".github/workflows",
         "vercel",
+        "vercel.json",
+        "netlify.toml",
         "deploy",
-        "config",
     ],
     "workflow-discipline": [
         "AGENTS.md",
         "docs",
-        "tasks",
     ],
     "architecture-review": [
         "src",
-        "app",
-        "lib",
         "modules",
         "services",
+        "packages",
     ],
     "refactor-safety": [
         "src",
-        "app",
         "lib",
         "components",
     ],
 }
 
-RISK_KEYWORDS = {
-    "database",
-    "db",
-    "migration",
-    "migrate",
-    "schema",
-    "auth",
-    "login",
-    "permission",
-    "admin",
-    "deploy",
-    "deployment",
-    "production",
-    "prod",
-    "secret",
-    "refactor",
+TASK_CLASS_RULES = {
+    "complex": {
+        "plan",
+        "planning",
+        "workflow",
+        "orchestration",
+        "complex",
+        "complexity",
+        "architecture",
+        "mimari",
+        "redesign",
+        "task list",
+        "gorev listesi",
+        "multi step",
+        "multi-step",
+        "adim adim",
+        "kapsamli",
+    },
+    "risky": {
+        "database",
+        "db",
+        "migration",
+        "migrate",
+        "schema",
+        "auth",
+        "login",
+        "permission",
+        "permissions",
+        "admin",
+        "deploy",
+        "deployment",
+        "production",
+        "prod",
+        "secret",
+        "secrets",
+        "token",
+        "delete",
+        "remove",
+        "drop",
+        "destructive",
+        "veritabani",
+        "yetki",
+        "guvenlik",
+        "sifre",
+        "sil",
+        "kaldir",
+    },
 }
 
-COMPLEXITY_KEYWORDS = {
-    "plan",
-    "planning",
-    "workflow",
-    "orchestration",
-    "complex",
-    "complexity",
-    "architecture",
-    "mimari",
-    "refactor",
-    "redesign",
-    "task list",
-    "gorev listesi",
-    "multi step",
-    "multi-step",
-    "adim adim",
+WORKFLOW_POLICIES = {
+    "simple": "Inspect only the relevant files, make the smallest change, run a brief targeted check.",
+    "standard": "Use a short plan only when impact is unclear or more than two files are involved.",
+    "risky": "Stop before database, auth, deployment, destructive, package, or broad refactor changes and get explicit approval.",
+    "complex": "Create a concise task list, verify assumptions, and proceed in small validated steps.",
+}
+
+VERIFICATION_POLICIES = {
+    "simple": "syntax check, targeted unit test, or direct smoke check",
+    "standard": "targeted check plus nearby regression check when shared behavior is touched",
+    "risky": "approval first, then the narrowest relevant check plus behavior evidence",
+    "complex": "incremental checks after each meaningful step; stop after repeated failure",
 }
 
 
@@ -278,6 +278,21 @@ def matches_prefix(trigger: str, token: str) -> bool:
     return len(trigger) >= PREFIX_TRIGGER_MIN_LEN and token.startswith(trigger)
 
 
+def contains_rule(text: str, tokens: set[str], rule: str) -> bool:
+    rule_l = normalize_text(rule)
+    if not rule_l:
+        return False
+    if " " in rule_l or "/" in rule_l or "." in rule_l:
+        return rule_l in text
+    return rule_l in tokens
+
+
+def task_rule_match(prompt: str, class_name: str) -> bool:
+    prompt_l = normalize_text(prompt)
+    prompt_tokens = set(tokenize(prompt))
+    return any(contains_rule(prompt_l, prompt_tokens, rule) for rule in TASK_CLASS_RULES[class_name])
+
+
 def load_skills_from_dir(base_dir: Path, source: str) -> List[Dict[str, object]]:
     skills: List[Dict[str, object]] = []
 
@@ -320,13 +335,59 @@ def find_project_skills(project_root: Path) -> List[Dict[str, object]]:
     return skills
 
 
-def collect_repo_signals(project_root: Path) -> set[str]:
+def package_json_signals(project_root: Path) -> set[str]:
     signals: set[str] = set()
+    package_json = project_root / "package.json"
 
-    for skill_name, hints in REPO_SIGNAL_MAP.items():
+    if not package_json.exists():
+        return signals
+
+    try:
+        data = json.loads(package_json.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return signals
+
+    deps = {}
+    for key in ("dependencies", "devDependencies"):
+        value = data.get(key)
+        if isinstance(value, dict):
+            deps.update({normalize_text(name): True for name in value})
+
+    if any(name in deps for name in ("prisma", "drizzle-orm", "knex", "sequelize", "typeorm")):
+        signals.add("database-safety")
+    if any(name in deps for name in ("next-auth", "@auth/core", "passport", "jsonwebtoken", "bcrypt", "bcryptjs")):
+        signals.add("auth-security")
+    if any(name in deps for name in ("express", "fastify", "hono", "koa", "trpc", "@trpc/server")):
+        signals.add("api-safety")
+    if any(name in deps for name in ("react", "vue", "svelte", "tailwindcss", "@vitejs/plugin-react")):
+        signals.add("ui-ux-change")
+    if any(name in deps for name in ("jest", "vitest", "playwright", "cypress", "eslint", "typescript")):
+        signals.add("test-validation")
+
+    return signals
+
+
+def path_exists(project_root: Path, hint: str) -> bool:
+    hint = hint.strip().rstrip("/")
+    if not hint:
+        return False
+    return (project_root / hint).exists()
+
+
+def collect_repo_signals(project_root: Path, skills: List[Dict[str, object]]) -> set[str]:
+    signals = package_json_signals(project_root)
+
+    for skill_name, hints in REPO_SIGNAL_RULES.items():
         for hint in hints:
-            if (project_root / hint).exists():
+            if path_exists(project_root, hint):
                 signals.add(skill_name)
+                break
+
+    for skill in skills:
+        name = str(skill.get("name", ""))
+        for hint in skill.get("paths", []):
+            if path_exists(project_root, str(hint)):
+                signals.add(name)
                 break
 
     return signals
@@ -366,31 +427,13 @@ def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -
                 matched_trigger = True
                 break
 
-    for path_hint in skill.get("paths", []):
-        path_l = normalize_text(path_hint)
-        if path_l and path_l in prompt_l:
-            score += 5
-
     name_parts = tokenize(str(skill.get("name", "")).replace("-", " "))
     for part in name_parts:
         if len(part) >= 4 and (part in prompt_token_set or any(matches_prefix(part, token) for token in prompt_tokens)):
             score += 2
 
-    description_matches = 0
-    for word in WORD_RE.findall(normalize_text(skill.get("description", ""))):
-        if word in DESCRIPTION_STOP_WORDS:
-            continue
-        if word in prompt_token_set:
-            score += 1
-            description_matches += 1
-            if description_matches >= DESCRIPTION_MATCH_LIMIT:
-                break
-
     risk = normalize_text(skill.get("risk", ""))
-    has_risky_word = any(
-        word in prompt_token_set or any(matches_prefix(word, token) for token in prompt_tokens)
-        for word in RISKY_WORDS
-    )
+    has_risky_word = task_rule_match(prompt, "risky")
 
     if matched_trigger and risk == "high" and has_risky_word:
         score += 2
@@ -399,9 +442,22 @@ def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -
         score += 3
 
     if skill["name"] in repo_signals and score > 0:
-        score += 2
+        score += 1
 
     return score
+
+
+def allowed_skill_count(scored: List[Tuple[Dict[str, object], int]], prompt: str) -> int:
+    names = {str(skill.get("name", "")) for skill, _score in scored}
+    risk_count = sum(1 for skill, _score in scored if skill.get("risk") == "high")
+
+    if {"bug-fix-debugging", "test-validation"}.issubset(names):
+        return EXTENDED_MAX_SKILLS
+
+    if risk_count >= 2 or (task_rule_match(prompt, "complex") and len(names) > DEFAULT_MAX_SKILLS):
+        return EXTENDED_MAX_SKILLS
+
+    return DEFAULT_MAX_SKILLS
 
 
 def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: set[str]) -> List[Tuple[Dict[str, object], int]]:
@@ -429,6 +485,7 @@ def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: se
 
     selected: List[Tuple[Dict[str, object], int]] = []
     seen_names = set()
+    max_skills = allowed_skill_count(scored, prompt)
 
     for skill, score in scored:
         if score < cutoff:
@@ -440,31 +497,30 @@ def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: se
         selected.append((skill, score))
         seen_names.add(name)
 
-        if len(selected) >= MAX_SKILLS:
+        if len(selected) >= max_skills:
             break
 
     return selected
 
 
 def classify_task(prompt: str, selected: List[Tuple[Dict[str, object], int]]) -> str:
-    prompt_l = normalize_text(prompt)
     prompt_tokens = set(tokenize(prompt))
     selected_names = {skill["name"] for skill, _ in selected}
+
+    if task_rule_match(prompt, "complex"):
+        return "complex"
 
     if selected and any(skill.get("risk") == "high" for skill, _ in selected):
         return "risky"
 
-    if any(keyword in prompt_l for keyword in COMPLEXITY_KEYWORDS):
-        return "complex"
-
-    if any(keyword in prompt_tokens for keyword in RISK_KEYWORDS):
+    if task_rule_match(prompt, "risky"):
         return "risky"
-
-    if len(selected_names) > 1:
-        return "standard"
 
     if len(prompt_tokens) <= 5:
         return "simple"
+
+    if len(selected_names) > 1:
+        return "standard"
 
     return "standard"
 
@@ -507,30 +563,19 @@ def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str,
         lines.append("- No specific skill matched. Use only the local `AGENTS.md` and make the minimum safe change.")
         lines.append("")
 
-    if task_class == "simple":
-        lines.append("## Workflow Mode")
-        lines.append("- Keep it short. Inspect only what is needed, change the minimum, verify briefly.")
-        lines.append("")
-    elif task_class == "risky":
-        lines.append("## Workflow Mode")
-        lines.append("- Stop before risky edits. Give a short plan and require approval for database, auth, deployment, or destructive changes.")
-        lines.append("")
-    elif task_class == "complex":
-        lines.append("## Workflow Mode")
-        lines.append("- Create a concise task list, verify assumptions, and proceed incrementally.")
-        lines.append("")
+    lines.append("## Workflow Policy")
+    lines.append(f"- Mode: {WORKFLOW_POLICIES[task_class]}")
+    lines.append(f"- Required verification: {VERIFICATION_POLICIES[task_class]}.")
+    lines.append("")
 
     lines.append("## Final Working Rules")
-    lines.append("- First identify the relevant files.")
-    lines.append("- Before risky changes, provide a short plan.")
+    lines.append("- First identify the relevant files and the smallest safe file set.")
     lines.append("- Keep plans under 5 bullets unless the user asks for more detail.")
     lines.append("- If evidence contradicts the plan, stop and reassess before continuing.")
-    lines.append("- Make the minimum safe change.")
-    lines.append("- Prefer the fewest files that solve the task.")
+    lines.append("- If the same check fails twice, stop and summarize the evidence instead of looping.")
     lines.append("- Keep explanations concise; do not narrate obvious code.")
     lines.append("- Do not perform database migrations, destructive actions, package changes, auth changes, or deployment changes without explicit approval.")
-    lines.append("- Before finishing, verify the work with the most relevant available check.")
-    lines.append("- At the end, summarize changed files, checks/tests, behavior evidence, and remaining risks.")
+    lines.append("- Done requires changed files, checks/tests, behavior evidence, and remaining risks.")
     lines.append("")
 
     return "\n".join(lines)
@@ -546,8 +591,9 @@ def main() -> int:
     project_root = find_project_root(Path(os.getcwd()))
     global_skills = load_skills_from_dir(GLOBAL_SKILLS_DIR, "global")
     project_skills = find_project_skills(project_root)
-    repo_signals = collect_repo_signals(project_root)
-    selected = select_skills(project_skills + global_skills, prompt, repo_signals)
+    skills = project_skills + global_skills
+    repo_signals = collect_repo_signals(project_root, skills)
+    selected = select_skills(skills, prompt, repo_signals)
     task_class = classify_task(prompt, selected)
 
     print(build_output(prompt, project_root, selected, task_class))

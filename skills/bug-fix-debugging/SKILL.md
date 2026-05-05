@@ -36,8 +36,12 @@ Use for bugs, failing tests, runtime errors, broken CI, regressions, or unexpect
 - Reproduce or isolate the failing path before editing when feasible.
 - Fix the root cause, then check nearby regression risk.
 
+## Evidence Checklist
+- Use repo evidence first: failing test, stack trace, log line, changed behavior, repro steps, or affected file path.
+- Ask one focused question only if the missing fact blocks reproduction or could change the fix.
+- If evidence conflicts, stop and summarize the conflict before editing.
+
 ## Guardrails
 - Do not patch only symptoms unless the user explicitly asks for a workaround.
-- Ask at most one focused question, and only when a critical fact blocks progress.
 - Follow logs/tests over assumptions.
 - If the bug is already reproducible from repo evidence, do not ask questions.

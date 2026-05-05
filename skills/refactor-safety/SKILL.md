@@ -36,6 +36,12 @@ Use when the task changes structure, names, file locations, public APIs, shared 
 - Consider whether a smaller local change solves the problem.
 - Verify any public surface that may shift: routes, exports, CLI flags, endpoint contracts, or schema-like interfaces.
 
+## Public Surface Verification
+- Routes/endpoints: run targeted route/API tests or a smoke request when available.
+- Exports/imports: run typecheck, build, or import-focused tests.
+- CLI flags/config: run help output, config validation, or the smallest command smoke test.
+- Contracts/schemas: run contract tests, schema validation, or affected serialization checks.
+
 ## Guardrails
 - Do not perform broad refactors unless explicitly requested.
 - Avoid unrelated formatting and opportunistic cleanup.

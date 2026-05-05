@@ -6,47 +6,52 @@ VERSION_URL="${AGENT_ROUTER_VERSION_URL:-https://raw.githubusercontent.com/st-de
 MIN_SKILLS="${AGENT_ROUTER_MIN_SKILLS:-10}"
 ok=1
 
-check_line() {
-  local name="$1"
-  local status="$2"
-  printf '%s: %s\n' "$name" "$status"
+pass() { printf '%s: OK\n' "$1"; }
+fail() { printf '%s: FAIL\n' "$1"; ok=0; }
+skip() { printf '%s: SKIPPED (%s)\n' "$1" "$2"; }
+
+local_version() {
+  if [ -f "$AGENT_ROUTER_HOME/VERSION" ]; then
+    tr -d '[:space:]' < "$AGENT_ROUTER_HOME/VERSION"
+  else
+    printf 'unknown'
+  fi
 }
 
-echo "Agent Router kontrolu basliyor..."
+check_version() {
+  local local latest
+  local="$(local_version)"
+  printf 'Version local: %s\n' "$local"
 
-local_version="unknown"
-if [ -f "$AGENT_ROUTER_HOME/VERSION" ]; then
-  local_version="$(tr -d '[:space:]' < "$AGENT_ROUTER_HOME/VERSION")"
-fi
-echo "Local version: $local_version"
-
-if command -v curl >/dev/null 2>&1; then
-  latest_version="$(curl -fsSL "${VERSION_URL}?t=$(date +%s)" 2>/dev/null | tr -d '[:space:]' || true)"
-  if [ -n "$latest_version" ]; then
-    echo "GitHub version: $latest_version"
-    if [ "$local_version" = "$latest_version" ]; then
-      check_line "Version" "OK"
-    else
-      check_line "Version" "UPDATE NEEDED"
-      echo "Guncellemek icin:"
-      echo "curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash"
-      ok=0
-    fi
-  else
-    check_line "Version" "SKIPPED (offline)"
+  if [ "${AGENT_ROUTER_OFFLINE:-0}" = "1" ]; then
+    skip "Version remote" "offline mode"
+    return
   fi
-else
-  check_line "Version" "SKIPPED (no curl)"
-fi
 
-if [ -x "$AGENT_ROUTER_HOME/router.py" ]; then
-  check_line "router.py" "OK"
-else
-  check_line "router.py" "FAIL"
-  ok=0
-fi
+  if ! command -v curl >/dev/null 2>&1; then
+    skip "Version remote" "no curl"
+    return
+  fi
 
-if python3 - "$AGENT_ROUTER_HOME" "$MIN_SKILLS" <<'PY'
+  latest="$(curl -fsSL "${VERSION_URL}?t=$(date +%s)" 2>/dev/null | tr -d '[:space:]' || true)"
+  if [ -z "$latest" ]; then
+    skip "Version remote" "network unavailable"
+    return
+  fi
+
+  printf 'Version remote: %s\n' "$latest"
+  if [ "$local" = "$latest" ]; then
+    pass "Version"
+  else
+    printf 'Update: curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash\n'
+    fail "Version"
+  fi
+}
+
+check_installation() {
+  [ -x "$AGENT_ROUTER_HOME/router.py" ] && pass "router.py" || fail "router.py"
+
+  if python3 - "$AGENT_ROUTER_HOME" "$MIN_SKILLS" <<'PY'
 import ast
 import runpy
 import sys
@@ -59,71 +64,61 @@ skills_dir = home / "skills"
 
 try:
     ast.parse(router.read_text(encoding="utf-8"))
-except Exception as exc:
-    print(f"python syntax: FAIL ({exc})")
-    raise SystemExit(1)
-print("python syntax: OK")
-
-try:
+    print("python syntax: OK")
     ns = runpy.run_path(str(router), run_name="agent_router_check")
     skills = ns["load_skills_from_dir"](skills_dir, "global")
 except Exception as exc:
-    print(f"skill loading: FAIL ({exc})")
+    print(f"installation internals: FAIL ({exc})")
     raise SystemExit(1)
 
 print(f"skill count: {len(skills)}")
 if len(skills) < min_skills:
-    print("skill loading: FAIL")
     raise SystemExit(1)
 print("skill loading: OK")
 PY
-then
-  :
-else
-  ok=0
-fi
-
-assert_route() {
-  local label="$1"
-  local prompt="$2"
-  local expected="$3"
-  local output
-
-  output="$(python3 "$AGENT_ROUTER_HOME/router.py" "$prompt" 2>/dev/null || true)"
-  if printf '%s\n' "$output" | grep -q "$expected"; then
-    check_line "route $label" "OK"
+  then
+    pass "Installation"
   else
-    check_line "route $label" "FAIL"
-    ok=0
+    fail "Installation"
   fi
 }
 
-assert_not_route() {
-  local label="$1"
-  local prompt="$2"
-  local unexpected="$3"
-  local output
+route_output() {
+  python3 "$AGENT_ROUTER_HOME/router.py" "$1" 2>/dev/null || true
+}
 
-  output="$(python3 "$AGENT_ROUTER_HOME/router.py" "$prompt" 2>/dev/null || true)"
-  if printf '%s\n' "$output" | grep -q "$unexpected"; then
-    check_line "route $label" "FAIL"
-    ok=0
+expect_route() {
+  local label="$1" prompt="$2" expected="$3"
+  route_output "$prompt" | grep -q "$expected" && pass "route $label" || fail "route $label"
+}
+
+reject_route() {
+  local label="$1" prompt="$2" unexpected="$3"
+  if route_output "$prompt" | grep -q "$unexpected"; then
+    fail "route $label"
   else
-    check_line "route $label" "OK"
+    pass "route $label"
   fi
 }
 
-assert_route "auth" "Admin login yetkisini duzelt" "auth-security"
-assert_route "database" "Veritabanina yeni alan ekle" "database-safety"
-assert_route "bug" "Bug var test failed loglara bak" "bug-fix-debugging"
-assert_route "verify" "verify code and run tests" "test-validation"
-assert_not_route "verify-no-db" "verify code and run tests" "database-safety"
-assert_route "complex" "Karmaşık mimari değişiklik için görev listesi hazırla" "workflow-discipline"
+check_routes() {
+  expect_route "auth" "Admin login yetkisini duzelt" "auth-security"
+  expect_route "database" "Veritabanina yeni alan ekle" "database-safety"
+  expect_route "bug" "Bug var test failed loglara bak" "bug-fix-debugging"
+  expect_route "verify" "verify code and run tests" "test-validation"
+  reject_route "verify-no-db" "verify code and run tests" "database-safety"
+  expect_route "complex" "Karmaşık mimari değişiklik için görev listesi hazırla" "Task class: \`complex\`"
+}
+
+echo "Agent Router check"
+check_version
+check_installation
+check_routes
 
 if [ "$ok" -eq 1 ]; then
-  echo "Agent Router saglik durumu: OK"
+  echo "Agent Router health: OK"
   exit 0
 fi
 
-echo "Agent Router saglik durumu: FAIL"
+echo "Agent Router health: FAIL"
 exit 1

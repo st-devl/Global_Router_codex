@@ -1,28 +1,15 @@
-# AGENTS.md - Project Instructions
+# AGENTS.md - Agent Router Project
 
-Bu proje global Agent Router ile çalışır. Uzun kurallar yerine görevle ilgili skill'ler router tarafından seçilir.
-Router, görevleri simple/standard/risky/complex olarak etiketleyebilir.
+Bu proje global Agent Router kullanır. Router görevleri `simple`, `standard`,
+`risky` veya `complex` olarak etiketler ve yalnızca ilgili skill'leri seçer.
 
-## Core Rules
-- İlgili dosyaları tespit etmeden kod değiştirme.
-- Basit işlerde hızlı ilerle; riskli veya çok adımlı işlerde kısa plan ver.
-- Planı kısa tut; mümkünse 5 maddeden fazla yazma.
-- Varsayım yanlış çıkarsa dur ve yeniden değerlendir.
-- Minimum güvenli değişiklik yap; mevcut mimari ve stile uy.
-- Hata düzeltirken semptomu değil kök sebebi çöz.
-- İş bitmeden en uygun test veya kontrolle doğrula.
-- Kullanıcı onayı olmadan migration, destructive command, package upgrade, auth/deployment değişikliği veya büyük refactor yapma.
-- Mümkün olan en az dosyayı değiştir.
-- Gereksiz açıklama yapma; kısa ve net kal.
+## Rules
+- Seçilen skill'leri kullan; ilgisiz skill dosyalarını okuma.
+- İlgili dosyaları tespit et, en az dosyayla çöz, doğrulamadan bitirme.
+- Riskli değişikliklerde onay almadan migration, destructive command, package
+  change, auth/deployment değişikliği veya büyük refactor yapma.
+- Gereksiz açıklama ve proje yönetimi dosyası üretme.
 
-## Skill Router
-Global router: `~/.agent-router/router.py`
-Proje özel skill klasörü: `.agent/skills/`
-
-Prompta göre sadece seçilen skill'leri kullan. Gereksiz skill dosyalarını okuma.
-
-## Final Report
-- Yapılanlar
-- Değişen dosyalar
-- Test/kontrol ve davranış kanıtı
-- Kalan risk veya manuel kontrol
+## Paths
+- Global router: `~/.agent-router/router.py`
+- Project skills: `.agent/skills/`
