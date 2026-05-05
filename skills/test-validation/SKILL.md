@@ -1,6 +1,7 @@
 ---
 name: test-validation
 description: Tests, lint, type checks, build validation, CI, quality checks, proof of correctness, and post-change verification.
+summary: Doğrulamada task class'a göre en dar faydalı check'i seç, komut/sonuç/davranış kanıtını raporla.
 triggers:
   - test
   - tests

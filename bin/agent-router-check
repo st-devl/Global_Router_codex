@@ -83,31 +83,54 @@ PY
   fi
 }
 
-route_output() {
-  python3 "$AGENT_ROUTER_HOME/router.py" "$1" 2>/dev/null || true
-}
-
-expect_route() {
-  local label="$1" prompt="$2" expected="$3"
-  route_output "$prompt" | grep -q "$expected" && pass "route $label" || fail "route $label"
-}
-
-reject_route() {
-  local label="$1" prompt="$2" unexpected="$3"
-  if route_output "$prompt" | grep -q "$unexpected"; then
-    fail "route $label"
-  else
-    pass "route $label"
-  fi
-}
-
 check_routes() {
-  expect_route "auth" "Admin login yetkisini duzelt" "auth-security"
-  expect_route "database" "Veritabanina yeni alan ekle" "database-safety"
-  expect_route "bug" "Bug var test failed loglara bak" "bug-fix-debugging"
-  expect_route "verify" "verify code and run tests" "test-validation"
-  reject_route "verify-no-db" "verify code and run tests" "database-safety"
-  expect_route "complex" "Karmaşık mimari değişiklik için görev listesi hazırla" "Task class: \`complex\`"
+  if python3 - "$AGENT_ROUTER_HOME" <<'PY'
+import json
+import os
+import runpy
+import sys
+from pathlib import Path
+
+home = Path(sys.argv[1])
+router = home / "router.py"
+fixture_path = home / "tests" / "routes.json"
+
+if not fixture_path.exists():
+    print(f"route fixtures missing: {fixture_path}")
+    raise SystemExit(1)
+
+os.environ["AGENT_ROUTER_HOME"] = str(home)
+ns = runpy.run_path(str(router), run_name="agent_router_check_routes")
+route_prompt = ns["route_prompt"]
+
+fixtures = json.loads(fixture_path.read_text(encoding="utf-8"))
+failed = False
+
+for item in fixtures:
+    route = route_prompt(item["prompt"], Path.cwd())
+    names = {skill["name"] for skill in route["selected_skills"]}
+    label = item["label"]
+
+    if route["task_class"] != item["task_class"]:
+        print(f"route {label}: FAIL task_class={route['task_class']}")
+        failed = True
+        continue
+
+    missing = sorted(set(item.get("include", [])) - names)
+    unexpected = sorted(set(item.get("exclude", [])) & names)
+    if missing or unexpected:
+        print(f"route {label}: FAIL missing={missing} unexpected={unexpected}")
+        failed = True
+    else:
+        print(f"route {label}: OK")
+
+raise SystemExit(1 if failed else 0)
+PY
+  then
+    pass "Routes"
+  else
+    fail "Routes"
+  fi
 }
 
 echo "Agent Router check"

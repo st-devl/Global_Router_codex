@@ -1,6 +1,7 @@
 ---
 name: workflow-discipline
 description: Non-trivial tasks needing planning, staged execution, scope control, progress tracking, or reassessment when assumptions fail.
+summary: Non-trivial işlerde router task class'ını takip et, kısa plan yap, çelişen evidence görünce yeniden değerlendir.
 triggers:
   - plan
   - planning

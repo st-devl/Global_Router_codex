@@ -1,6 +1,7 @@
 ---
 name: refactor-safety
 description: Refactoring, renaming, restructuring, moving files, extracting components, improving architecture, or reducing duplication.
+summary: Refactor işlerinde davranışı koru, public surface etkisini doğrula, unrelated cleanup ve geniş redesign yapma.
 triggers:
   - refactor
   - yeniden düzenle

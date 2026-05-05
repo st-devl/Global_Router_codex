@@ -1,6 +1,7 @@
 ---
 name: api-safety
 description: API endpoints, route handlers, controllers, server actions, request validation, response shapes, and client-server data flow.
+summary: API değişikliklerinde server-side validation, auth guard, response contract ve sensitive data sınırlarını koru.
 triggers:
   - api
   - endpoint

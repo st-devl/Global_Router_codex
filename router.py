@@ -264,6 +264,12 @@ def as_list(value: object) -> List[str]:
     return []
 
 
+def as_text(value: object) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    return ""
+
+
 def normalize_text(text: object) -> str:
     normalized = str(text).translate(TURKISH_ASCII_MAP).casefold()
     decomposed = unicodedata.normalize("NFKD", normalized)
@@ -319,6 +325,7 @@ def load_skills_from_dir(base_dir: Path, source: str) -> List[Dict[str, object]]
                 "triggers": as_list(meta.get("triggers", [])),
                 "paths": as_list(meta.get("paths", [])),
                 "description": str(meta.get("description", "")),
+                "summary": as_text(meta.get("summary", "")),
                 "risk": str(meta.get("risk", "medium")),
             }
         )
@@ -393,11 +400,19 @@ def collect_repo_signals(project_root: Path, skills: List[Dict[str, object]]) ->
     return signals
 
 
-def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -> int:
+def skill_summary(skill: Dict[str, object]) -> str:
+    summary = as_text(skill.get("summary", ""))
+    if summary:
+        return summary
+    return as_text(skill.get("description", ""))
+
+
+def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -> Tuple[int, List[str]]:
     prompt_l = normalize_text(prompt)
     prompt_tokens = tokenize(prompt)
     prompt_token_set = set(prompt_tokens)
     score = 0
+    reasons: List[str] = []
     matched_trigger = False
 
     for trigger in skill.get("triggers", []):
@@ -408,22 +423,26 @@ def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -
         if " " in trigger_l:
             if trigger_l in prompt_l:
                 score += 7
+                reasons.append(f"phrase:{trigger}")
                 matched_trigger = True
             continue
 
         if "/" in trigger_l or "." in trigger_l:
             if trigger_l in prompt_l:
                 score += 5
+                reasons.append(f"path-like-trigger:{trigger}")
                 matched_trigger = True
             continue
 
         for token in prompt_tokens:
             if token == trigger_l:
                 score += 6
+                reasons.append(f"exact:{trigger}")
                 matched_trigger = True
                 break
             if matches_prefix(trigger_l, token):
                 score += 4
+                reasons.append(f"prefix:{trigger}->{token}")
                 matched_trigger = True
                 break
 
@@ -431,25 +450,29 @@ def score_skill(skill: Dict[str, object], prompt: str, repo_signals: set[str]) -
     for part in name_parts:
         if len(part) >= 4 and (part in prompt_token_set or any(matches_prefix(part, token) for token in prompt_tokens)):
             score += 2
+            reasons.append(f"name:{part}")
 
     risk = normalize_text(skill.get("risk", ""))
     has_risky_word = task_rule_match(prompt, "risky")
 
     if matched_trigger and risk == "high" and has_risky_word:
         score += 2
+        reasons.append("risk-bonus")
 
     if skill.get("source") == "project" and score > 0:
         score += 3
+        reasons.append("project-skill")
 
     if skill["name"] in repo_signals and score > 0:
         score += 1
+        reasons.append("repo-signal")
 
-    return score
+    return score, reasons
 
 
-def allowed_skill_count(scored: List[Tuple[Dict[str, object], int]], prompt: str) -> int:
-    names = {str(skill.get("name", "")) for skill, _score in scored}
-    risk_count = sum(1 for skill, _score in scored if skill.get("risk") == "high")
+def allowed_skill_count(scored: List[Tuple[Dict[str, object], int, List[str]]], prompt: str) -> int:
+    names = {str(skill.get("name", "")) for skill, _score, _reasons in scored}
+    risk_count = sum(1 for skill, _score, _reasons in scored if skill.get("risk") == "high")
 
     if {"bug-fix-debugging", "test-validation"}.issubset(names):
         return EXTENDED_MAX_SKILLS
@@ -460,13 +483,13 @@ def allowed_skill_count(scored: List[Tuple[Dict[str, object], int]], prompt: str
     return DEFAULT_MAX_SKILLS
 
 
-def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: set[str]) -> List[Tuple[Dict[str, object], int]]:
-    scored: List[Tuple[Dict[str, object], int]] = []
+def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: set[str]) -> List[Tuple[Dict[str, object], int, List[str]]]:
+    scored: List[Tuple[Dict[str, object], int, List[str]]] = []
 
     for skill in skills:
-        score = score_skill(skill, prompt, repo_signals)
+        score, reasons = score_skill(skill, prompt, repo_signals)
         if score >= MIN_SKILL_SCORE:
-            scored.append((skill, score))
+            scored.append((skill, score, reasons))
 
     scored.sort(
         key=lambda item: (
@@ -487,14 +510,14 @@ def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: se
     seen_names = set()
     max_skills = allowed_skill_count(scored, prompt)
 
-    for skill, score in scored:
+    for skill, score, reasons in scored:
         if score < cutoff:
             continue
 
         name = skill["name"]
         if name in seen_names:
             continue
-        selected.append((skill, score))
+        selected.append((skill, score, reasons))
         seen_names.add(name)
 
         if len(selected) >= max_skills:
@@ -503,14 +526,14 @@ def select_skills(skills: List[Dict[str, object]], prompt: str, repo_signals: se
     return selected
 
 
-def classify_task(prompt: str, selected: List[Tuple[Dict[str, object], int]]) -> str:
+def classify_task(prompt: str, selected: List[Tuple[Dict[str, object], int, List[str]]]) -> str:
     prompt_tokens = set(tokenize(prompt))
-    selected_names = {skill["name"] for skill, _ in selected}
+    selected_names = {skill["name"] for skill, _score, _reasons in selected}
 
     if task_rule_match(prompt, "complex"):
         return "complex"
 
-    if selected and any(skill.get("risk") == "high" for skill, _ in selected):
+    if selected and any(skill.get("risk") == "high" for skill, _score, _reasons in selected):
         return "risky"
 
     if task_rule_match(prompt, "risky"):
@@ -525,7 +548,16 @@ def classify_task(prompt: str, selected: List[Tuple[Dict[str, object], int]]) ->
     return "standard"
 
 
-def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str, object], int]], task_class: str) -> str:
+def build_output(
+    prompt: str,
+    project_root: Path,
+    selected: List[Tuple[Dict[str, object], int, List[str]]],
+    task_class: str,
+    repo_signals: set[str],
+    *,
+    debug: bool = False,
+    full: bool = False,
+) -> str:
     lines: List[str] = []
 
     lines.append("# Routed Agent Prompt")
@@ -539,25 +571,34 @@ def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str,
     lines.append("- Read the local `AGENTS.md` if it exists.")
     lines.append("- Do not read unrelated skill files.")
     lines.append("- Use only the selected skills below unless the task clearly requires another one.")
+    if debug:
+        signals = ", ".join(sorted(repo_signals)) or "none"
+        lines.append(f"- Repo signals: `{signals}`")
     lines.append("")
 
     if selected:
         lines.append("## Selected Skills")
-        for skill, score in selected:
-            lines.append(f"- `{skill['name']}` from `{skill['source']}` - score {score}")
+        for skill, score, reasons in selected:
+            if debug:
+                reason_text = ", ".join(reasons) or "none"
+                lines.append(f"- `{skill['name']}` from `{skill['source']}` - score {score} - `{skill['path']}` - reasons: {reason_text}")
+            else:
+                lines.append(f"- `{skill['name']}`: {skill_summary(skill)}")
         lines.append("")
 
-        lines.append("## Skill Instructions")
-        for skill, _score in selected:
-            lines.append("")
-            lines.append("---")
-            lines.append("")
-            lines.append(f"# Skill: {skill['name']}")
-            lines.append(f"Source: `{skill['source']}`")
-            lines.append(f"File: `{skill['path']}`")
-            lines.append("")
-            lines.append(str(skill["body"]).strip())
-            lines.append("")
+        if full or debug:
+            lines.append("## Skill Instructions")
+            for skill, _score, _reasons in selected:
+                lines.append("")
+                lines.append("---")
+                lines.append("")
+                lines.append(f"# Skill: {skill['name']}")
+                if debug:
+                    lines.append(f"Source: `{skill['source']}`")
+                    lines.append(f"File: `{skill['path']}`")
+                    lines.append("")
+                lines.append(str(skill["body"]).strip())
+                lines.append("")
     else:
         lines.append("## Selected Skills")
         lines.append("- No specific skill matched. Use only the local `AGENTS.md` and make the minimum safe change.")
@@ -581,14 +622,8 @@ def build_output(prompt: str, project_root: Path, selected: List[Tuple[Dict[str,
     return "\n".join(lines)
 
 
-def main() -> int:
-    prompt = " ".join(sys.argv[1:]).strip()
-
-    if not prompt:
-        print('Usage: agent-route "your task prompt"', file=sys.stderr)
-        return 1
-
-    project_root = find_project_root(Path(os.getcwd()))
+def route_prompt(prompt: str, cwd: Path) -> Dict[str, object]:
+    project_root = find_project_root(cwd)
     global_skills = load_skills_from_dir(GLOBAL_SKILLS_DIR, "global")
     project_skills = find_project_skills(project_root)
     skills = project_skills + global_skills
@@ -596,7 +631,72 @@ def main() -> int:
     selected = select_skills(skills, prompt, repo_signals)
     task_class = classify_task(prompt, selected)
 
-    print(build_output(prompt, project_root, selected, task_class))
+    return {
+        "prompt": prompt,
+        "project_root": str(project_root),
+        "task_class": task_class,
+        "workflow_policy": WORKFLOW_POLICIES[task_class],
+        "verification_policy": VERIFICATION_POLICIES[task_class],
+        "repo_signals": sorted(repo_signals),
+        "selected_skills": [
+            {
+                "name": str(skill.get("name", "")),
+                "source": str(skill.get("source", "")),
+                "path": str(skill.get("path", "")),
+                "score": score,
+                "risk": str(skill.get("risk", "")),
+                "summary": skill_summary(skill),
+                "reasons": reasons,
+            }
+            for skill, score, reasons in selected
+        ],
+        "_selected": selected,
+    }
+
+
+def public_route(route: Dict[str, object]) -> Dict[str, object]:
+    return {key: value for key, value in route.items() if key != "_selected"}
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    json_output = False
+    debug = False
+    full = False
+    prompt_parts: List[str] = []
+
+    for arg in args:
+        if arg == "--json":
+            json_output = True
+        elif arg == "--debug":
+            debug = True
+        elif arg == "--full":
+            full = True
+        else:
+            prompt_parts.append(arg)
+
+    prompt = " ".join(prompt_parts).strip()
+
+    if not prompt:
+        print('Usage: agent-route [--json] [--debug] [--full] "your task prompt"', file=sys.stderr)
+        return 1
+
+    route = route_prompt(prompt, Path(os.getcwd()))
+
+    if json_output:
+        print(json.dumps(public_route(route), ensure_ascii=False, indent=2))
+    else:
+        print(
+            build_output(
+                prompt,
+                Path(str(route["project_root"])),
+                route["_selected"],  # type: ignore[arg-type]
+                str(route["task_class"]),
+                set(route["repo_signals"]),  # type: ignore[arg-type]
+                debug=debug,
+                full=full,
+            )
+        )
     return 0
 
 

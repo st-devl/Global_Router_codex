@@ -1,6 +1,7 @@
 ---
 name: architecture-review
 description: Project structure, module boundaries, dependency flow, and impact analysis before code changes.
+summary: Mimari işlerde framework, entry point, module boundary, shared dependency ve public impact analizini kısa tut.
 triggers:
   - architecture
   - mimari

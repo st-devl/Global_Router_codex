@@ -1,6 +1,7 @@
 ---
 name: deployment-safety
 description: Deployment, environment variables, Docker, CI/CD, hosting config, build settings, production issues, secrets, and release changes.
+summary: Deployment işlerinde secrets, env, CI/CD, production config ve rollback riskini değiştirmeden önce açık et.
 triggers:
   - deploy
   - deployment

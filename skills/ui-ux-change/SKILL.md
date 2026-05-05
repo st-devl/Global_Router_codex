@@ -1,6 +1,7 @@
 ---
 name: ui-ux-change
 description: Visual design, components, layout, responsive behavior, forms, buttons, theme, CSS, accessibility, and frontend user experience.
+summary: UI işlerinde mevcut component/style sistemini koru, desktop/mobile kullanılabilirlik ve accessibility smoke check yap.
 triggers:
   - ui
   - ux

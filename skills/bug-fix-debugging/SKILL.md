@@ -1,6 +1,7 @@
 ---
 name: bug-fix-debugging
 description: Bug reports, failing tests, runtime errors, logs, regressions, broken CI, unexpected behavior, and root-cause debugging.
+summary: Bug işlerinde repo evidence ile repro veya izolasyon yap, kök sebebi düzelt, yakın regression riskini kontrol et.
 triggers:
   - bug
   - hata

@@ -1,6 +1,7 @@
 ---
 name: auth-security
 description: Authentication, authorization, sessions, cookies, JWT, passwords, roles, permissions, admin areas, and sensitive access control.
+summary: Auth işlerinde guard, session/token güvenliği, server-side permission ve admin erişimini zayıflatma.
 triggers:
   - auth
   - authentication

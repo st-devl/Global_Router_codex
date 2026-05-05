@@ -1,6 +1,7 @@
 ---
 name: database-safety
 description: Database schema, migrations, ORM models, SQL queries, relations, destructive data actions, and tenant data safety.
+summary: Database işlerinde migration/drop/data rewrite için onay al, schema uyumluluğu ve tenant/data integrity riskini koru.
 triggers:
   - database
   - db

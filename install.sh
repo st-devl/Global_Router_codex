@@ -56,6 +56,7 @@ install_files() {
   install -d "$INSTALL_DIR/bin"
   install -d "$INSTALL_DIR/skills"
   install -d "$INSTALL_DIR/templates"
+  install -d "$INSTALL_DIR/tests"
 
   install -m 0755 "$source_dir/router.py" "$INSTALL_DIR/router.py"
 
@@ -72,6 +73,14 @@ install_files() {
   done
 
   install -m 0644 "$source_dir/templates/PROJECT_AGENTS_SHORT.md" "$INSTALL_DIR/templates/PROJECT_AGENTS_SHORT.md"
+
+  if [ -d "$source_dir/tests" ]; then
+    local test_file
+    for test_file in "$source_dir"/tests/*; do
+      [ -f "$test_file" ] || continue
+      install -m 0644 "$test_file" "$INSTALL_DIR/tests/$(basename "$test_file")"
+    done
+  fi
 
   local skill_dir
   for skill_dir in "$source_dir"/skills/*; do

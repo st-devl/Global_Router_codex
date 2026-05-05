@@ -1,0 +1,37 @@
+[
+  {
+    "label": "auth",
+    "prompt": "Admin login yetkisini duzelt",
+    "task_class": "risky",
+    "include": ["auth-security"],
+    "exclude": []
+  },
+  {
+    "label": "database",
+    "prompt": "Veritabanina yeni alan ekle",
+    "task_class": "risky",
+    "include": ["database-safety"],
+    "exclude": []
+  },
+  {
+    "label": "bug",
+    "prompt": "Bug var test failed loglara bak",
+    "task_class": "standard",
+    "include": ["bug-fix-debugging", "test-validation"],
+    "exclude": []
+  },
+  {
+    "label": "verify",
+    "prompt": "verify code and run tests",
+    "task_class": "simple",
+    "include": ["test-validation"],
+    "exclude": ["database-safety"]
+  },
+  {
+    "label": "complex",
+    "prompt": "Karmaşık mimari değişiklik için görev listesi hazırla",
+    "task_class": "complex",
+    "include": ["workflow-discipline", "architecture-review"],
+    "exclude": []
+  }
+]

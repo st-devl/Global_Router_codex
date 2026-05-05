@@ -104,6 +104,27 @@ Routed prompt'u terminalde gösterir:
 agent-route "Görev metni"
 ```
 
+Normal çıktı kısa tutulur: task class, seçilen skill adları, compact skill
+summary'leri, workflow policy ve final kurallarını basar.
+
+Tam skill gövdelerini görmek veya Codex'e daha ayrıntılı talimat vermek için:
+
+```bash
+agent-route --full "Görev metni"
+```
+
+Skor, eşleşme nedeni, repo sinyali ve dosya path'lerini görmek için:
+
+```bash
+agent-route --debug "Görev metni"
+```
+
+Makine-okunur route sonucu için:
+
+```bash
+agent-route --json "Görev metni"
+```
+
 Routed prompt'u panoya kopyalar:
 
 ```bash
@@ -242,6 +263,9 @@ destek sinyali olarak kullanılır.
 Router task'i `simple`, `standard`, `risky` veya `complex` olarak etiketler.
 Workflow ve doğrulama kuralları bu task class üzerinden seçilir.
 
+Normal mod skor, source ve file path gibi debug detaylarını prompt'a koymaz. Bu
+detaylar sadece `--debug` veya `--json` modunda görünür.
+
 ## Çalışma Disiplini
 
 Basit işler kısa kalır. Riskli veya çok adımlı işlerde router kısa plan,
@@ -317,12 +341,15 @@ Bu komut kısa PASS/FAIL raporu verir:
 
 - Version
 - Installation
-- Route smoke tests
+- Route fixture tests
+
+Route testleri `tests/routes.json` fixture dosyasından okunur ve router'ın JSON
+uyumlu route sonucuna göre doğrulanır; metin içinde `grep` araması yapılmaz.
 
 Her şey doğruysa en sonda şunu görürsün:
 
 ```text
-Agent Router saglik durumu: OK
+Agent Router health: OK
 ```
 
 Eğer `Version: UPDATE NEEDED` görürsen güncelle:
