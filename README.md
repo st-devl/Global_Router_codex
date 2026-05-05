@@ -85,11 +85,18 @@ AGENTS.md
 
 Uygulama kodlarina dokunmaz. Router kodu projeye kopyalanmaz.
 
-## 2. Prompt Yazarken Ozel Kelime Yazmak Gerekir Mi?
+## 2. Prompt Yazarken `agent-codex` Yazmak Gerekir Mi?
 
-Hayir. Her promptun basina surekli ayni kelimeleri yazman gerekmez.
+Evet. Router'in calismasi icin Codex'i normal `codex` komutu yerine
+`agent-codex` komutuyla baslatmalisin.
 
-Dogal sekilde gorevini yazman yeterli:
+Yani her promptta komut sabittir:
+
+```bash
+agent-codex "Görev metni"
+```
+
+Degisen kisim sadece tirnak icindeki gorev metnidir:
 
 ```bash
 agent-codex "Admin panelde kullanıcı yetkisini düzelt"
@@ -115,9 +122,14 @@ agent-codex "Testler fail oluyor loglara bakıp düzelt"
 
 Router bu prompttan `bug-fix-debugging` ve `test-validation` skill'lerini secer.
 
-Yani sabit bir sihirli kelime yok. Promptun konusu neyse ona uygun kelimeler
-kullanmalisin: `login`, `yetki`, `database`, `migration`, `UI`, `mobil`, `test`,
-`bug`, `deploy`, `refactor` gibi.
+Kisaca:
+
+- Router aktif olsun istiyorsan komutun basinda mutlaka `agent-codex` yaz.
+- Prompt metninin icine ekstra bir sabit kelime veya sihirli ifade yazma.
+- Tırnak icindeki metni isin konusuna gore dogal yaz.
+
+Promptun konusu neyse ona uygun kelimeler kullanmalisin: `login`, `yetki`,
+`database`, `migration`, `UI`, `mobil`, `test`, `bug`, `deploy`, `refactor` gibi.
 
 Daha net prompt daha iyi routing demektir. Kotu ornek:
 
