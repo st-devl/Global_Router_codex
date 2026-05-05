@@ -1,43 +1,57 @@
 # Global Router Codex
 
-Global Router Codex, Codex gibi terminal tabanlı coding agent'lar için hazırlanmış
-global bir **Agent Skill Router** sistemidir.
+Global Router Codex, Codex gibi terminal tabanli coding agent'lar icin hazirlanmis
+bir **Agent Skill Router** sistemidir.
 
-Amaç basit: Her görevde uzun `AGENTS.md` dosyalarını veya bütün skill
-talimatlarını prompt'a eklemek yerine, yazdığın göreve göre sadece gerekli
-skill dosyalarını seçmek.
+Kisa anlatim: Sen bir gorev yazarsin, bu sistem gorevin konusunu anlar ve Codex'e
+sadece o gorev icin gerekli kurallari ekler. Her promptta butun uzun talimatlari
+okutmadigi icin prompt daha kisa, daha odakli ve daha guvenli olur.
 
-Bu sayede prompt daha kısa, daha odaklı ve daha güvenli olur.
+## Ne Ise Yarar?
 
-## Ne İşe Yarar?
+- Auth, database, API, UI, deployment, refactor, test ve bug gibi konulari ayirt eder.
+- Goreve uygun skill'i secer.
+- Gereksiz skill dosyalarini prompt'a koymaz.
+- Token tasarrufu saglar.
+- Riskli islerde Codex'i daha dikkatli calistirir.
+- Her projeye router kodunu kopyalamaz; bilgisayarda global calisir.
 
-- Görev metnine göre doğru skill talimatlarını seçer.
-- Gereksiz skill dosyalarını prompt'a eklemez.
-- Token tüketimini azaltır.
-- Database, auth, deployment, refactor gibi riskli işlerde Codex'i daha dikkatli
-  çalışmaya zorlar.
-- Bug fix, doğrulama ve çok adımlı işlerde kök sebep, plan ve kanıt disiplinini
-  güçlendirir.
-- Her projeye router kopyalamadan global çalışır.
-- İstersen projeye özel skill dosyalarını da destekler.
+## En Kisa Kullanim
 
-Örnek:
+Bilgisayara bir kez kur:
 
 ```bash
-agent-route "Admin login yetkisini düzelt"
+curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
+source ~/.zshrc
 ```
 
-Bu görev için `auth-security` skill'i seçilir.
+Bir projeye gir ve projeyi hazirla:
 
 ```bash
-agent-route "Veritabanına yeni alan ekle"
+cd /path/to/project
+agent-router-init
 ```
 
-Bu görev için `database-safety` skill'i seçilir.
+Sonra Codex'i router uzerinden kullan:
 
-## Çalışma Mantığı
+```bash
+agent-codex "Admin login yetkisini düzelt"
+```
 
-Sistem bilgisayara global olarak kurulur:
+## 1. Ilk Defa Bir Projeye Dahil Etmek
+
+Bu sistem iki asamali calisir.
+
+### A. Bilgisayara global kurulum
+
+Bu komut sistemi bilgisayarina kurar:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
+source ~/.zshrc
+```
+
+Bu kurulum sunlari olusturur:
 
 ```text
 ~/.agent-router/
@@ -45,178 +59,257 @@ Sistem bilgisayara global olarak kurulur:
   router.py
   skills/
   templates/
+  tests/
 ```
 
-Projelerin içine router kodu kopyalanmaz. Projeye sadece istersen kısa bir
-`AGENTS.md` ve proje özel skill klasörü eklenir:
+### B. Proje icinde hazirlik
 
-```text
-AGENTS.md
-.agent/skills/
-```
-
-Router, komutu hangi proje klasöründe çalıştırırsan o klasörden proje kökünü
-bulur. Şu dosyalardan biri proje kökü olarak kabul edilir:
-
-```text
-.git
-AGENTS.md
-package.json
-pyproject.toml
-composer.json
-go.mod
-Cargo.toml
-pom.xml
-build.gradle
-```
-
-## Kurulum
-
-Güvenli yöntem: Script'i önce indirip oku, sonra çalıştır.
-
-```bash
-curl -fsSL -o /tmp/agent-router-install.sh https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh
-less /tmp/agent-router-install.sh
-bash /tmp/agent-router-install.sh
-```
-
-Hızlı kurulum:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
-```
-
-Kurulumdan sonra terminal ayarlarını yenile:
-
-```bash
-source ~/.zshrc
-```
-
-Kurulum `.zshrc` içine uzun fonksiyonlar gömmez. Sadece `~/.agent-router/bin`
-klasörünü `PATH` içine alan kısa ve idempotent bir blok ekler. Komutların gerçek
-kodları ayrı executable dosyalardır.
-
-## Komutlar
-
-Routed prompt'u terminalde gösterir:
-
-```bash
-agent-route "Görev metni"
-```
-
-Normal çıktı kısa tutulur: task class, seçilen skill adları, compact skill
-summary'leri, workflow policy ve final kurallarını basar.
-
-Tam skill gövdelerini görmek veya Codex'e daha ayrıntılı talimat vermek için:
-
-```bash
-agent-route --full "Görev metni"
-```
-
-Skor, eşleşme nedeni, repo sinyali ve dosya path'lerini görmek için:
-
-```bash
-agent-route --debug "Görev metni"
-```
-
-Makine-okunur route sonucu için:
-
-```bash
-agent-route --json "Görev metni"
-```
-
-Routed prompt'u panoya kopyalar:
-
-```bash
-agent-copy "Görev metni"
-```
-
-Routed prompt ile Codex'i başlatır:
-
-```bash
-agent-codex "Görev metni"
-```
-
-Bulunduğun projeye kısa `AGENTS.md` ve `.agent/skills/` klasörü ekler:
-
-```bash
-agent-router-init
-```
-
-Kurulumun çalışır ve güncel olduğunu kontrol eder:
-
-```bash
-agent-router-check
-```
-
-Komut dosyaları şurada kurulur:
-
-```text
-~/.agent-router/bin/
-  agent-route
-  agent-copy
-  agent-codex
-  agent-router-init
-  agent-router-check
-```
-
-## Yeni Bir Projede Kullanım
-
-Yeni veya mevcut bir projeye gir:
+Bir projede bu sistemi kullanmak icin once proje klasorune gir:
 
 ```bash
 cd /path/to/project
 ```
 
-Projeyi router için hazırla:
+Sonra sunu calistir:
 
 ```bash
 agent-router-init
 ```
 
-Bu komut sadece şunları oluşturur:
+Bu komut proje icine sadece sunlari ekler:
 
 ```text
 AGENTS.md
 .agent/skills/
 ```
 
-Uygulama kodlarına dokunmaz.
+Uygulama kodlarina dokunmaz. Router kodu projeye kopyalanmaz.
 
-Sonra görevleri router üzerinden çalıştır:
+## 2. Prompt Yazarken Ozel Kelime Yazmak Gerekir Mi?
+
+Hayir. Her promptun basina surekli ayni kelimeleri yazman gerekmez.
+
+Dogal sekilde gorevini yazman yeterli:
 
 ```bash
 agent-codex "Admin panelde kullanıcı yetkisini düzelt"
 ```
 
-veya sadece prompt'u görmek için:
+Router bu prompttan `auth-security` skill'ini secer.
 
 ```bash
-agent-route "Mobilde buton hizasını düzelt"
+agent-codex "Veritabanına yeni alan ekle"
 ```
 
-## Proje Özel Skill Ekleme
+Router bu prompttan `database-safety` skill'ini secer.
 
-Global skill'ler yetmezse proje içinde özel skill ekleyebilirsin.
+```bash
+agent-codex "Mobilde buton hizasını düzelt"
+```
 
-Örnek:
+Router bu prompttan `ui-ux-change` skill'ini secer.
+
+```bash
+agent-codex "Testler fail oluyor loglara bakıp düzelt"
+```
+
+Router bu prompttan `bug-fix-debugging` ve `test-validation` skill'lerini secer.
+
+Yani sabit bir sihirli kelime yok. Promptun konusu neyse ona uygun kelimeler
+kullanmalisin: `login`, `yetki`, `database`, `migration`, `UI`, `mobil`, `test`,
+`bug`, `deploy`, `refactor` gibi.
+
+Daha net prompt daha iyi routing demektir. Kotu ornek:
+
+```bash
+agent-codex "Bunu düzelt"
+```
+
+Daha iyi ornek:
+
+```bash
+agent-codex "Admin login sonrası yetki kontrolü yanlış çalışıyor, düzelt"
+```
+
+## 3. Gunceleme
+
+Bu sistemi daha once kurduysan ve en guncel halini almak istiyorsan su komutu
+calistir:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
+source ~/.zshrc
+```
+
+Bunu bir kez calistirman yeterlidir. Cunku router global calisir:
+
+```text
+~/.agent-router/
+```
+
+Yani bir kere global guncelleme yapinca, bu bilgisayardaki tum projeler yeni
+router'i kullanir. Her projede ayri ayri router guncellemen gerekmez.
+
+Kurulumun calisir ve guncel oldugunu kontrol etmek icin:
+
+```bash
+agent-router-check
+```
+
+Beklenen basarili sonuc:
+
+```text
+Agent Router health: OK
+```
+
+Internet yoksa sadece lokal kontrolleri calistirmak icin:
+
+```bash
+AGENT_ROUTER_OFFLINE=1 agent-router-check
+```
+
+## 4. Komutlar
+
+Promptu terminalde gormek icin:
+
+```bash
+agent-route "Görev metni"
+```
+
+Promptu panoya kopyalamak icin:
+
+```bash
+agent-copy "Görev metni"
+```
+
+Codex'i routed prompt ile baslatmak icin:
+
+```bash
+agent-codex "Görev metni"
+```
+
+Debug bilgisi gormek icin:
+
+```bash
+agent-route --debug "Görev metni"
+```
+
+Tam skill talimatlarini dahil etmek icin:
+
+```bash
+agent-route --full "Görev metni"
+```
+
+JSON cikti almak icin:
+
+```bash
+agent-route --json "Görev metni"
+```
+
+## 5. RTK-AI ile Birlikte Kullanilir Mi?
+
+Evet, kullanilabilir. Ama ikisi ayni isi yapmaz.
+
+Global Router Codex:
+
+```text
+Prompt hazirlar, dogru skill'i secer.
+```
+
+RTK-AI / RTK:
+
+```text
+Shell komut ciktilarini token acisindan optimize eder.
+```
+
+Bu yuzden normal proje islerinde birlikte kullanilabilirler. Ornek: Codex bir
+test komutu calistiracaksa RTK shell output'unu kisaltabilir:
+
+```bash
+rtk npm test
+rtk git status
+rtk pytest -q
+```
+
+Ama dikkat: `agent-route`, `agent-copy` ve `agent-codex` prompt ureten
+komutlardir. Bu komutlarin ciktisi RTK tarafindan filtrelenirse Codex'e gidecek
+prompt bozulabilir veya eksilebilir.
+
+Bu yuzden onerilen kullanim:
+
+```bash
+agent-codex "Admin login yetkisini düzelt"
+```
+
+RTK'yi ise Codex'in calistirdigi proje komutlarinda kullan:
+
+```bash
+rtk npm run build
+rtk npm test
+rtk git diff
+```
+
+Eger kendi terminalinde mutlaka RTK uzerinden calistirman gerekiyorsa, RTK'nin
+raw/proxy modunu kullan:
+
+```bash
+rtk proxy agent-route "Admin login yetkisini düzelt"
+```
+
+Kisa cevap: Cakisma beklenmez. Performansi dusurmezler; farkli katmanlarda
+calisirlar. Sadece routed prompt ciktisini filtreletmemeye dikkat et.
+
+## 6. Nasil Calisir?
+
+Router gorev metnine bakar ve task class belirler:
+
+```text
+simple
+standard
+risky
+complex
+```
+
+Sonra uygun skill'leri secer. Varsayilan olarak en fazla 2 skill secer. Sadece
+bug+verification veya birden fazla bagimsiz risk varsa 3 skill'e cikar.
+
+Ornek skill'ler:
+
+- `auth-security`
+- `database-safety`
+- `api-safety`
+- `ui-ux-change`
+- `test-validation`
+- `bug-fix-debugging`
+- `deployment-safety`
+- `refactor-safety`
+- `architecture-review`
+- `workflow-discipline`
+
+Normal modda prompt kisa tutulur. Skor, dosya yolu ve eslesme nedeni gibi teknik
+detaylar sadece `--debug` veya `--json` ile gorunur.
+
+## 7. Proje Ozel Skill Eklemek
+
+Global skill'ler yetmezse proje icinde o projeye ozel skill ekleyebilirsin.
 
 ```bash
 mkdir -p .agent/skills/project-specific-skill
 ```
 
-Sonra şu dosyayı oluştur:
+Sonra su dosyayi olustur:
 
 ```text
 .agent/skills/project-specific-skill/SKILL.md
 ```
 
-Örnek skill formatı:
+Ornek:
 
 ```markdown
 ---
 name: project-specific-skill
-description: Bu projeye özel iş kuralları.
+description: Bu projeye özel ödeme ve tenant kuralları.
+summary: Ödeme ve tenant işlerinde mevcut akışı bozma, veri bütünlüğünü koru.
 triggers:
   - ödeme
   - invoice
@@ -224,7 +317,7 @@ triggers:
 paths:
   - app/
   - src/
-risk: medium
+risk: high
 ---
 
 # Project Specific Skill
@@ -233,187 +326,71 @@ Bu projede ödeme, tenant veya fatura alanlarına dokunmadan önce mevcut akış
 incele. Gereksiz refactor yapma. Veri bütünlüğünü koru.
 ```
 
-Proje özel skill'leri global skill'lerle birlikte değerlendirilir ve eşleşirse
-öncelik kazanır.
+## 8. Guvenli Kurulum Yontemi
 
-## Mevcut Skill'ler
-
-Global olarak gelen skill'ler:
-
-- `architecture-review`
-- `database-safety`
-- `auth-security`
-- `api-safety`
-- `ui-ux-change`
-- `test-validation`
-- `refactor-safety`
-- `deployment-safety`
-- `workflow-discipline`
-- `bug-fix-debugging`
-
-Router varsayılan olarak en fazla 2 skill seçer. Sadece bug+verification veya
-çoklu bağımsız risk sinyali varsa 3. skill'e çıkar. Eşleşme yoksa local
-`AGENTS.md` ile minimum güvenli değişiklik yapılmasını söyler.
-
-Skorlama; Türkçe/İngilizce normalizasyon, exact/phrase/güvenli prefix eşleşme,
-dinamik ikincil skill eşiği ve gerçek repo sinyali kullanır. `paths` alanı prompt
-metni içinde aranmaz; yalnızca repo içinde ilgili dosya/klasör gerçekten varsa
-destek sinyali olarak kullanılır.
-
-Router task'i `simple`, `standard`, `risky` veya `complex` olarak etiketler.
-Workflow ve doğrulama kuralları bu task class üzerinden seçilir.
-
-Normal mod skor, source ve file path gibi debug detaylarını prompt'a koymaz. Bu
-detaylar sadece `--debug` veya `--json` modunda görünür.
-
-## Çalışma Disiplini
-
-Basit işler kısa kalır. Riskli veya çok adımlı işlerde router kısa plan,
-approval ve doğrulama kurallarını task class üzerinden ekler. `workflow-discipline`,
-`bug-fix-debugging`, `test-validation` ve `refactor-safety` yalnızca ilgili
-görevlerde seçilir.
-
-## Health Check
-
-`agent-router-check` şu durumlarda kırılmamalı:
-
-- Local kurulum bozuksa
-- Python syntax bozuksa
-- Skill dosyaları yüklenemiyorsa
-- `verify code and run tests` yanlışlıkla database skill'i seçiyorsa
-- Karmaşık mimari görevleri `workflow-discipline` seçmiyorsa
-
-Network yoksa sürüm karşılaştırması atlanır; diğer kontroller devam eder. Bunu
-bilerek yapmak için offline mod kullan:
+Hizli kurulum pratik ama script'i once okumak daha guvenlidir.
 
 ```bash
-AGENT_ROUTER_OFFLINE=1 agent-router-check
-```
-
-## Güncelleme
-
-Bu repoda yeni özellik geliştirmek için:
-
-```bash
-cd /Users/suheyp/Documents/software/CodexAgent
-```
-
-Değişiklikleri yap, test et:
-
-```bash
-bash -n install.sh
-for f in bin/*; do bash -n "$f"; done
-python3 router.py "Admin login yetkisini düzelt"
-./install.sh
-source ~/.zshrc
-agent-router-check
-```
-
-GitHub'a gönder:
-
-```bash
-git status
-git add .
-git commit -m "Update agent router"
-git push
-```
-
-Başka bir bilgisayarda veya mevcut bilgisayarda global kurulumu güncellemek için
-kurulum komutunu tekrar çalıştırabilirsin:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
+curl -fsSL -o /tmp/agent-router-install.sh https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh
+less /tmp/agent-router-install.sh
+bash /tmp/agent-router-install.sh
 source ~/.zshrc
 ```
 
-Kurulum script'i `.zshrc` içindeki Agent Router bloğunu tekrar tekrar çoğaltmaz;
-varsa günceller.
+## 9. Sorun Giderme
 
-## Sağlık Kontrolü
-
-Zaman zaman sistemin çalışır ve güncel olduğunu kontrol etmek için:
-
-```bash
-agent-router-check
-```
-
-Bu komut kısa PASS/FAIL raporu verir:
-
-- Version
-- Installation
-- Route fixture tests
-
-Route testleri `tests/routes.json` fixture dosyasından okunur ve router'ın JSON
-uyumlu route sonucuna göre doğrulanır; metin içinde `grep` araması yapılmaz.
-
-Her şey doğruysa en sonda şunu görürsün:
-
-```text
-Agent Router health: OK
-```
-
-Eğer `Version: UPDATE NEEDED` görürsen güncelle:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
-source ~/.zshrc
-```
-
-## Güvenlik Kuralları
-
-Router çıktısına her zaman şu çalışma kuralları eklenir:
-
-- Önce ilgili dosyaları tespit et.
-- Riskli değişikliklerden önce kısa plan ver.
-- Varsayım yanlış çıkarsa dur ve yeniden değerlendir.
-- Minimum güvenli değişiklik yap.
-- Kullanıcı onayı olmadan database migration, destructive action, paket
-  değişikliği, auth değişikliği veya deployment değişikliği yapma.
-- İş bitmeden en uygun test veya kontrolle çalıştığını kanıtla.
-- İş sonunda değişen dosyaları, testleri, davranış kanıtını ve kalan riskleri
-  özetle.
-
-## Sorun Giderme
-
-Komut bulunamıyorsa:
+Komut bulunamiyorsa:
 
 ```bash
 source ~/.zshrc
 ```
 
-Hala bulunamıyorsa kurulum dosyalarını kontrol et:
+Hala bulunamiyorsa:
 
 ```bash
 ls -R ~/.agent-router
 ```
 
-Router'ı direkt çalıştır:
+Router'i direkt calistirmak icin:
 
 ```bash
 python3 ~/.agent-router/router.py "Admin login yetkisini düzelt"
 ```
 
-Codex komutu yoksa `agent-codex` çalışmaz. Bu durumda `agent-route` veya
-`agent-copy` kullanabilirsin.
+Codex komutu yoksa `agent-codex` calismaz. Bu durumda `agent-route` veya
+`agent-copy` kullan.
 
-## Kısa Özet
+## Kisa Ozet
 
-Global kur:
+Ilk kurulum:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
 source ~/.zshrc
 ```
 
-Projede hazırla:
+Projeye dahil etme:
 
 ```bash
 cd /path/to/project
 agent-router-init
 ```
 
-Codex'i routed prompt ile kullan:
+Kullanma:
 
 ```bash
 agent-codex "Görev metni"
+```
+
+Guncelleme:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/st-devl/Global_Router_codex/main/install.sh | bash
+source ~/.zshrc
+```
+
+Kontrol:
+
+```bash
+agent-router-check
 ```
